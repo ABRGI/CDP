@@ -1,0 +1,22 @@
+{
+  "name": "omena-cdp-inflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start-new-reservation-hook": "functions-framework --target=NewReservationHook --port=9000",
+    "prestart": "npm run build",
+    "gcp-build": "npm run build"
+  },
+  "keywords": [],
+  "author": "Mika hirvikorpi",
+  "private": true,
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.2.0"
+  }
+}

@@ -1,2 +1,5 @@
+.DS_store
 functions/node_modules/
 functions/dist/
+functions/coverage
+functions/test-data/*sample*

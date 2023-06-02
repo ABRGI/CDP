@@ -7,16 +7,36 @@
     "build": "tsc",
     "start-new-reservation-hook": "functions-framework --target=NewReservationHook --port=9000",
     "prestart": "npm run build",
-    "gcp-build": "npm run build"
+    "gcp-build": "npm run build",
+    "test": "jest --coverage ./src"
   },
   "keywords": [],
   "author": "Mika hirvikorpi",
   "private": true,
   "license": "ISC",
   "devDependencies": {
-    "typescript": "^4.9.5"
+    "@babel/core": "^7.22.1",
+    "@babel/preset-env": "^7.22.4",
+    "@babel/preset-typescript": "^7.21.5",
+    "@types/jest": "^29.5.2",
+    "@types/uuid": "^9.0.1",
+    "babel-jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@google-cloud/functions-framework": "^3.2.0"
+    "@google-cloud/functions-framework": "^3.2.0",
+    "crypto": "^1.0.1",
+    "csv-parser": "^3.0.0",
+    "dayjs": "^1.11.8",
+    "uuid": "^9.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testPathIgnorePatterns": [
+      "node_modules",
+      "client"
+    ]
   }
 }

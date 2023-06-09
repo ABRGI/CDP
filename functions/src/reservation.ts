@@ -150,7 +150,6 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       marketingPermission: r.marketingPermission
     }
   }
-  return
 }
 
 /**

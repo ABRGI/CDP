@@ -3,11 +3,11 @@ import { v4 as uuidv4 } from 'uuid'
 import { getRandomInt, loadCsv, writeCsv } from "../utils"
 import dayjs from "dayjs"
 import { Guest } from "../guest"
-import { generateBirthDate, generateCompanyName, generateEmail, generateFirstName, generateHash, generateLastName, generatePhoneNumber, generateStreetAddress, getNextReservationId } from "../test-utils"
+import { generateBirthDate, generateCompanyName, generateEmail, generateFirstName, generateHash, generateLastName, generatePhoneNumber, generateStreetAddress, getNextReservationId } from "../test/utils"
 
 
 
-const generateNewCustomerRow = (sampleRows: Reservation[]): Reservation => {
+const generateReservationRow = (sampleRows: Reservation[]): Reservation => {
   const si = getRandomInt(0, sampleRows.length - 1)
   const sr = sampleRows[si]
 
@@ -117,7 +117,7 @@ export const generateTestData = async (sampleFilename: string,
   const guests: Guest[] = []
   for (let i = 0; i < count; i++) {
     const reservation = Math.random() < 0.1 ? generateExistingCustomerRow(reservations[getRandomInt(0, reservations.length - 1)], sampleRows) :
-      generateNewCustomerRow(sampleRows)
+      generateReservationRow(sampleRows)
     reservations.push(reservation)
     if (Math.random() > 0.5) {
       guests.push(generateGuestRow(reservation))

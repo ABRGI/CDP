@@ -2,63 +2,10 @@ import { Reservation, mapReservationValue } from "../reservation"
 import { v4 as uuidv4 } from 'uuid'
 import { getRandomInt, loadCsv, writeCsv } from "../utils"
 import dayjs from "dayjs"
-import { Guest, mapGuestValue } from "../guest"
+import { Guest } from "../guest"
+import { generateBirthDate, generateCompanyName, generateEmail, generateFirstName, generateHash, generateLastName, generatePhoneNumber, generateStreetAddress, getNextReservationId } from "../test-utils"
 
-let nextReservationId = 12201891
 
-const characters = 'abcdefghijklmnopqrstuvwxyz';
-
-const getRandomCharacter = (): string => {
-  return characters[getRandomInt(0, characters.length - 1)]
-}
-
-const generateRandomString = (length: number): string => {
-  let retval = ""
-  for (let i = 0; i < length; i++) {
-    retval += getRandomCharacter()
-  }
-  return retval
-}
-
-const getNextReservationId = (): number => {
-  nextReservationId++
-  return nextReservationId - 1
-}
-
-const generateFirstName = (): string => {
-  return generateRandomString(getRandomInt(3, 8))
-}
-
-const generateLastName = (): string => {
-  return generateRandomString(getRandomInt(5, 12))
-}
-
-const generatePhoneNumber = (): string => {
-  return "+358" + getRandomInt(10000000, 1000000000).toString()
-}
-
-const generateBirthDate = (adult: boolean): string => {
-  return dayjs()
-    .subtract(getRandomInt(adult ? 18 : 1, 99), "years")
-    .subtract(getRandomInt(0, 366), "days").format("YYYY-MM-DD")
-}
-
-const generateEmail = (): string => {
-  const domains = ["gmail.com", "hotmail.com", "luukku.com", "firma.fi", "msn.com"]
-  return generateHash() + "@" + domains[getRandomInt(0, domains.length - 1)]
-}
-
-const generateHash = (): string => {
-  return uuidv4()
-}
-
-const generateCompanyName = (): string => {
-  return "Yritys " + ([1, 2, 3, 4].map(() => getRandomCharacter()).join(""))
-}
-
-const generateStreetAddress = (): string => {
-  return generateRandomString(15) + " " + getRandomInt(1, 100).toString()
-}
 
 const generateNewCustomerRow = (sampleRows: Reservation[]): Reservation => {
   const si = getRandomInt(0, sampleRows.length - 1)

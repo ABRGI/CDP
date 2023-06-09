@@ -50,7 +50,12 @@ export const isGuestMatch = (r1: Guest, r2: Guest): boolean => {
     r1.mobile === r2.mobile
 }
 
-
+/**
+ * Create customer from guest information
+ * @param r Reservation mentioned in the guest information
+ * @param g Guest information
+ * @returns
+ */
 export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | undefined => {
   if (g.ssn || g.email || g.mobile) {
     const { weekendDays, weekDays, totalDays } = calculateDaysBetween(r.checkIn, r.checkOut)
@@ -85,7 +90,7 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
       totalLeisureBookings: 0,
       totalBusinessBookings: 0,
 
-      totalGuestBookings: 0,
+      totalGuestBookings: 1,
       totalBookings: 0,
 
       blocked: r.state === "BLOCKED",
@@ -103,6 +108,13 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
   return
 }
 
+/**
+ * Merges guest stay information to an existing customer
+ * @param c Existing customer
+ * @param r Reservation related to guest stay
+ * @param g Guest information
+ * @returns
+ */
 export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Customer => {
   const nc = createCustomerFromGuest(r, g)
   if (!nc) {
@@ -122,6 +134,7 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
     latestCheckOutDate: r.checkOut,
     latestHotel: r.hotel,
 
+    totalGuestBookings: c.totalGuestBookings + 1,
     blocked: r.state === "BLOCKED",
 
     totalWeekDays: weekDays,
@@ -130,5 +143,21 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
     weekendPercentage: weekendDays / totalDays,
 
     marketingPermission: nc.marketingPermission
+  }
+}
+
+/**
+ * Adds guest metrics to a customer. In this case the guest is a guest of the customer.
+ * @param c Existing customer
+ * @param g Guest stay
+ */
+export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
+  const bookingPeopleCounts = c.bookingPeopleCounts.map((count, index) =>
+    index < c.bookingPeopleCounts.length - 1 ? count : count + 1)
+  return {
+    ...c,
+    includesChildren: c.includesChildren || dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
+    bookingPeopleCounts,
+    avgPeoplePerBooking: c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length,
   }
 }

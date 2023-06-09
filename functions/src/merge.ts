@@ -1,10 +1,11 @@
 import { Customer } from "./customer"
-import { Guest, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
+import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 
 
 /**
- * Class for creating customer profiles from stream of reservations and guest information
+ * Class for creating customer profiles from stream of reservations and guest information.
+ * It is assumed that reservations are given ordered by the reservation ID.
  */
 export class CustomerMerger {
   emailIds: { [email: string]: string } = {}
@@ -38,6 +39,7 @@ export class CustomerMerger {
    * @param g Guest to add
    */
   addGuest(g: Guest) {
+    // Handling the guest customer profile
     const customerId = this.getExistingCustomer(g.ssn, g.email, g.mobile)
     if (customerId) {
       this.reservationCustomerId[g.id] = customerId
@@ -49,6 +51,14 @@ export class CustomerMerger {
       }
     }
 
+    // Add the guest information to the booking customer
+    const reservationCustomerId = this.reservationCustomerId[g.reservationId]
+    if (reservationCustomerId) {
+      const customer = this.customers[reservationCustomerId]
+      if (customer) {
+        this.customers[reservationCustomerId] = addGuestToCustomer(customer, g)
+      }
+    }
   }
 
   /**

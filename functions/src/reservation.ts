@@ -1,6 +1,7 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { createHashId } from "./utils"
+import { mergeHotelCounts } from "./hotel"
 
 export type Reservation = {
   id: number,
@@ -33,7 +34,7 @@ export type Reservation = {
   isFullyRefunded: boolean  // TRUE|FALSE
   pendingConfirmationSince?: string,     // '', '2021-11-08 00:00:00'
   changeType?: string,       // '', 'EXTEND'
-  state: string              // 'CONFIRMED', 'CANCELLED', 'PENDING_CONFIRMATION', 'BLOCKED'
+  state: 'CONFIRMED' | 'CANCELLED' | 'PENDING_CONFIRMATION' | 'BLOCKED'
   notifyCustomer: boolean    // TRUE|FALSE
   isOverrided: boolean       // TRUE|FALSE
   type: number,              // 1-3
@@ -63,7 +64,7 @@ const reservationFloats = new Set([
 ])
 
 const reservationBools = new Set([
-  "cancelled", "isFullyRefunded", "notifyCustomer", "isOverrided",
+  "cancelled", "notifyCustomer", "isOverrided",
   "marketingPermission", "breakfastsForAll"
 ])
 
@@ -92,10 +93,16 @@ export const isMatch = (r1: Reservation, r2: Reservation): boolean => {
     r1.customerMobile === r2.customerMobile
 }
 
-
+/**
+ * Creates new customer from first reservation
+ * @param r Reservation to create the customer from
+ * @returns New customer
+ */
 export const createCustomerFromReservation = (r: Reservation): Customer | undefined => {
   if (r.customerSsn || r.customerEmailReal || r.customerMobile) {
     const checkInDay = dayjs(r.checkIn).day()
+    const bookingTotalNights = dayjs(r.checkOut).diff(r.checkIn, "days")
+    const leadTimeDays = dayjs(r.checkIn).diff(r.created, "days")
     const weekend = checkInDay === 0 || checkInDay === 6
     return {
       id: createHashId(`${r.id}`),
@@ -105,17 +112,20 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       level: 'New',
       lifetimeSpend: r.totalPaid,
 
+      bookingNightsCounts: [bookingTotalNights],
+      bookingPeopleCounts: [1],
+      bookingLeadTimesDays: [leadTimeDays],
+
       avgBookingsPerYear: 1,
       avgBookingFrequencyDays: 0,
-      avgNightsPerBooking: 0,
-      avgPeoplePerBooking: 0,
-      avgLeadTimeDays: 0,
+      avgNightsPerBooking: bookingTotalNights,
+      avgPeoplePerBooking: 1,
+      avgLeadTimeDays: leadTimeDays,
 
+      firstCheckInDate: r.checkIn,
       latestCheckInDate: r.checkIn,
       latestCheckOutDate: r.checkOut,
       latestHotel: r.hotel,
-
-      totalDiscountBookings: 0,
 
       totalBookingComBookings: r.bookingChannel === "BOOKINGCOM" ? 1 : 0,
       totalExpediaBookings: r.bookingChannel === "EXPEDIA" ? 1 : 0,
@@ -125,21 +135,13 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalLeisureBookings: r.customerPurposeOfVisit === "LEISURE" ? 1 : 0,
       totalBusinessBookings: r.customerPurposeOfVisit === "BUSINESS" ? 1 : 0,
 
-      totalRefunds: r.isFullyRefunded ? 1 : 0,
-      totalReclamations: r.isFullyRefunded ? 1 : 0,
-
-      totalNightBookings: 0,
-      totalMorningBookings: 0,
-      totalDayBookings: 0,
-      totalEveningBookings: 0,
-
       totalGuestBookings: 0,
       totalBookings: 1,
 
-      blocked: false,
+      blocked: r.state === "BLOCKED",
 
-      feedbacklyScores: [],
-
+      totalWeekDays: weekend ? 0 : bookingTotalNights,
+      totalWeekendDays: weekend ? bookingTotalNights : 0,
       weekdayPercentage: weekend ? 0 : 1,
       weekendPercentage: weekend ? 1 : 0,
 
@@ -149,4 +151,78 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
     }
   }
   return
+}
+
+/**
+ * Completements customer information with new reservation information
+ * @param c Existing customer
+ * @param r New reservation
+ * @returns Customer with updated information
+ */
+export const mergeReservationToCustomer = (c: Customer, r: Reservation): Customer => {
+  const nc = createCustomerFromReservation(r)
+  if (!nc) {
+    return c
+  }
+  const nights = dayjs(r.checkOut).diff(r.checkIn, "days")
+
+  const avgBookingsPerYear = dayjs(r.checkIn).diff(c.firstCheckInDate, "years") /
+    (c.totalBookings + 1)
+
+  const avgBookingFrequencyDays = (c.avgBookingFrequencyDays * c.totalBookings +
+    dayjs(c.latestCheckInDate).diff(r.checkIn, "days")) / (c.totalBookings + 1)
+
+  const avgNightsPerBooking = (c.avgNightsPerBooking * c.totalBookings + nights) / (c.totalBookings + 1)
+
+  const avgLeadTimeDays = (c.bookingLeadTimesDays.reduce((t, c) => t + c, 0) +
+    nc.avgLeadTimeDays) / (c.bookingLeadTimesDays.length + 1)
+
+  const avgPeoplePerBooking = (c.bookingPeopleCounts.reduce((t, c) => t + c, 0) + 1) / (c.totalBookings + 1)
+
+  return {
+    ...c,
+
+    dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
+    isoCountryCode: c.isoCountryCode || nc.dateOfBirth,
+    level: c.level,
+    lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
+
+    bookingNightsCounts: c.bookingNightsCounts.concat(nc.bookingNightsCounts),
+    bookingPeopleCounts: c.bookingPeopleCounts.concat(nc.bookingPeopleCounts),
+    bookingLeadTimesDays: c.bookingLeadTimesDays.concat(nc.bookingLeadTimesDays),
+    includesChildren: c.includesChildren || nc.includesChildren,
+
+    avgBookingsPerYear,
+    avgBookingFrequencyDays,
+    avgNightsPerBooking,
+    avgPeoplePerBooking,
+    avgLeadTimeDays,
+
+    latestCheckInDate: nc.latestCheckInDate,
+    latestCheckOutDate: nc.latestCheckOutDate,
+    latestHotel: nc.latestHotel,
+
+    totalBookingComBookings: c.totalBookingComBookings + nc.totalBookingComBookings,
+    totalExpediaBookings: c.totalExpediaBookings + nc.totalExpediaBookings,
+    totalNelsonBookings: c.totalNelsonBookings + nc.totalNelsonBookings,
+    totalMobileAppBookings: c.totalMobileAppBookings + nc.totalMobileAppBookings,
+
+    totalLeisureBookings: c.totalLeisureBookings + nc.totalLeisureBookings,
+    totalBusinessBookings: c.totalBookingComBookings + nc.totalBusinessBookings,
+
+    totalGuestBookings: c.totalGuestBookings,
+    totalBookings: c.totalBookings + 1,
+
+    blocked: c.blocked || nc.blocked,
+
+    totalWeekDays: c.totalWeekDays + nc.totalWeekDays,
+    totalWeekendDays: c.totalWeekendDays + nc.totalWeekendDays,
+
+    weekdayPercentage: (c.weekdayPercentage * c.totalBookings + nc.weekdayPercentage) / (c.totalBookings + 1),
+    weekendPercentage: (c.weekendPercentage * c.totalBookings + nc.weekendPercentage) / (c.totalBookings + 1),
+
+    totalHotelBookingCounts: mergeHotelCounts(c.totalHotelBookingCounts, nc.totalHotelBookingCounts),
+
+    marketingPermission: nc.marketingPermission
+  }
 }

@@ -1,7 +1,8 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { Reservation } from "./reservation"
-import { createHashId } from "./utils"
+import { calculateDaysBetween, createHashId } from "./utils"
+import { mergeHotelCounts } from "./hotel"
 
 export type Guest = {
   id: number,
@@ -52,15 +53,18 @@ export const isGuestMatch = (r1: Guest, r2: Guest): boolean => {
 
 export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | undefined => {
   if (g.ssn || g.email || g.mobile) {
-    const checkInDay = dayjs(r.checkIn).day()
-    const weekend = checkInDay === 0 || checkInDay === 6
+    const { weekendDays, weekDays, totalDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
-      id: createHashId(`${r.id}-${g.id}`),
+      id: createHashId(`${r.id}`),
       dateOfBirth: g.dateOfBirth,
       isoCountryCode: g.isoCountryCode,
       includesChildren: false,
-      level: 'New',
-      lifetimeSpend: 0.0,
+      level: 'Guest',
+      lifetimeSpend: r.totalPaid,
+
+      bookingNightsCounts: [],
+      bookingPeopleCounts: [],
+      bookingLeadTimesDays: [],
 
       avgBookingsPerYear: 0,
       avgBookingFrequencyDays: 0,
@@ -68,11 +72,10 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
       avgPeoplePerBooking: 0,
       avgLeadTimeDays: 0,
 
+      firstCheckInDate: r.checkIn,
       latestCheckInDate: r.checkIn,
       latestCheckOutDate: r.checkOut,
       latestHotel: r.hotel,
-
-      totalDiscountBookings: 0,
 
       totalBookingComBookings: 0,
       totalExpediaBookings: 0,
@@ -82,28 +85,50 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
       totalLeisureBookings: 0,
       totalBusinessBookings: 0,
 
-      totalRefunds: 0,
-      totalReclamations: 0,
-
-      totalNightBookings: 0,
-      totalMorningBookings: 0,
-      totalDayBookings: 0,
-      totalEveningBookings: 0,
-
-      totalGuestBookings: 1,
+      totalGuestBookings: 0,
       totalBookings: 0,
 
-      blocked: false,
+      blocked: r.state === "BLOCKED",
 
-      feedbacklyScores: [],
-
-      weekdayPercentage: weekend ? 0 : 1,
-      weekendPercentage: weekend ? 1 : 0,
+      totalWeekDays: weekDays,
+      totalWeekendDays: weekendDays,
+      weekdayPercentage: weekDays / totalDays,
+      weekendPercentage: weekendDays / totalDays,
 
       totalHotelBookingCounts: [],
 
-      marketingPermission: g.marketingPermission
+      marketingPermission: r.marketingPermission
     }
   }
   return
+}
+
+export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Customer => {
+  const nc = createCustomerFromGuest(r, g)
+  if (!nc) {
+    return c
+  }
+
+  const { weekendDays, weekDays, totalDays } = calculateDaysBetween(r.checkIn, r.checkOut)
+  return {
+    ...c,
+    dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
+    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
+    includesChildren: c.includesChildren || nc.includesChildren,
+    level: c.level,
+    lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
+
+    latestCheckInDate: r.checkIn,
+    latestCheckOutDate: r.checkOut,
+    latestHotel: r.hotel,
+
+    blocked: r.state === "BLOCKED",
+
+    totalWeekDays: weekDays,
+    totalWeekendDays: weekendDays,
+    weekdayPercentage: weekDays / totalDays,
+    weekendPercentage: weekendDays / totalDays,
+
+    marketingPermission: nc.marketingPermission
+  }
 }

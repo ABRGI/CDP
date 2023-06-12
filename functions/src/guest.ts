@@ -18,7 +18,7 @@ export type Guest = {
   dateOfBirth?: string     // '1969-01-01'
   purposeOfVisit?: string  // 'LEISURE'
   age?: number
-  passportNumber?: undefined,
+  passportNumber?: string,
   marketingPermission: boolean   // 'FALSE',
   isoCountryCode: string        // 'FIN'
   signatureId?: string
@@ -60,12 +60,15 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
   if (g.ssn || g.email || g.mobile) {
     const { weekendDays, weekDays, totalDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
-      id: createHashId(`${r.id}`),
+      id: createHashId(`${r.id}-${g.id}`),
+      ssn: g.ssn,
+      email: g.email,
+      phoneNumber: g.mobile,
       dateOfBirth: g.dateOfBirth,
       isoCountryCode: g.isoCountryCode,
-      includesChildren: false,
+      includesChildren: dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
       level: 'Guest',
-      lifetimeSpend: r.totalPaid,
+      lifetimeSpend: 0,
 
       bookingNightsCounts: [],
       bookingPeopleCounts: [],

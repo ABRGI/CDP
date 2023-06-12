@@ -28,7 +28,7 @@ export class CustomerMerger {
     } else {
       const customer = createCustomerFromReservation(r)
       if (customer) {
-        this.customers[customer.id] = customer
+        this.addCustomerToIndices(customer)
         this.reservationCustomerId[r.id] = customer.id
       }
     }
@@ -47,7 +47,7 @@ export class CustomerMerger {
     } else {
       const customer = createCustomerFromGuest(this.reservations[g.reservationId], g)
       if (customer) {
-        this.customers[customer.id] = customer
+        this.addCustomerToIndices(customer)
       }
     }
 
@@ -69,15 +69,32 @@ export class CustomerMerger {
    * @returns customer ID if one is found, undefined otherwise
    */
   getExistingCustomer(ssn?: string, email?: string, phoneNumber?: string): string | undefined {
-    if (ssn && this.ssnIds[ssn]) {
+    if (ssn && ssn in this.ssnIds) {
       return this.ssnIds[ssn]
     }
-    if (email && this.emailIds) {
+    if (email && email in this.emailIds) {
       return this.emailIds[email]
     }
-    if (phoneNumber && this.phoneNumberIds[phoneNumber]) {
+    if (phoneNumber && phoneNumber in this.phoneNumberIds) {
       return this.phoneNumberIds[phoneNumber]
     }
     return
+  }
+
+  getCustomers(): Customer[] {
+    return Object.values(this.customers)
+  }
+
+  private addCustomerToIndices(customer: Customer): void {
+    this.customers[customer.id] = customer
+    if (customer.ssn) {
+      this.ssnIds[customer.ssn] = customer.id
+    }
+    if (customer.email) {
+      this.emailIds[customer.email] = customer.id
+    }
+    if (customer.phoneNumber) {
+      this.phoneNumberIds[customer.phoneNumber] = customer.id
+    }
   }
 }

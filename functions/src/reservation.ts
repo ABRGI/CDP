@@ -106,6 +106,9 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
     const weekend = checkInDay === 0 || checkInDay === 6
     return {
       id: createHashId(`${r.id}`),
+      ssn: r.customerSsn,
+      email: r.customerEmailReal,
+      phoneNumber: r.customerMobile,
       dateOfBirth: r.customerDateOfBirth,
       isoCountryCode: r.customerIsoCountryCode,
       includesChildren: false,
@@ -180,7 +183,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
   return {
     ...c,
-
+    email: nc.email || c.email,
+    phoneNumber: nc.phoneNumber || c.phoneNumber,
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
     isoCountryCode: c.isoCountryCode || nc.dateOfBirth,
     level: c.level,

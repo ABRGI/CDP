@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
-import { createHashId, getRandomInt } from "../utils";
+import { createHashId, getRandomFrom, getRandomInt } from "../utils";
 import { v4 as uuidv4 } from 'uuid'
 import { Reservation } from "../reservation";
+import { Guest } from "../guest";
 
 let nextReservationId = 12201891
 
@@ -70,8 +71,8 @@ export const generateNewReservation = (): Reservation => {
     version: 2,
     reservationCode: getNextReservationId(),
     uuid: uuidv4(),
-    hotelId: 3,
-    lang: "fi",
+    hotelId: getRandomFrom([1, 2, 3, 4, 5, 6, 7]),
+    lang: getRandomFrom(["fi", "fi", "fi", "fi", "fi", "en"]),
     totalPaid: 99,
     currency: "EUR",
     customerFirstName: generateFirstName(),
@@ -79,10 +80,10 @@ export const generateNewReservation = (): Reservation => {
     customerMobile: generatePhoneNumber(),
     customerAddress: generateStreetAddress(),
     customerPostalCode: "00100",
-    customerCity: "sr.customerCity",
+    customerCity: "Helsinki",
     customerSsn: generateHash(),
     customerDateOfBirth: generateBirthDate(true),
-    customerPurposeOfVisit: "LEISURE",
+    customerPurposeOfVisit: getRandomFrom(["LEISURE", "BUSINESS"]),
     customerNationality: "FIN",
     companyName: generateCompanyName(),
     companyReference: undefined,
@@ -108,6 +109,26 @@ export const generateNewReservation = (): Reservation => {
     breakfastsForAll: false,
     customerIsoCountryCode: "FIN",
     reservationExtraInfo: {},
-    hotel: "HKI2"
+    hotel: getRandomFrom(["HKI2", "HKI3", "JYL1", "TRE2", "POR2", "VSA2", "TKU1", "TKU2"])
+  }
+}
+
+export const generateNewGuest = (reservationId?: number): Guest => {
+  return {
+    id: getNextReservationId(),
+    reservationId: reservationId || getNextReservationId(),
+    roomAlias: 1,
+    guestIndex: 1,
+    firstName: generateFirstName(),
+    lastName: generateLastName(),
+    nationality: 'FIN',
+    email: generateEmail(),
+    mobile: generatePhoneNumber(),
+    ssn: generateHash(),
+    dateOfBirth: generateBirthDate(false),
+    purposeOfVisit: getRandomFrom(["LEISURE", "BUSINESS"]),
+    passportNumber: generateHash(),
+    marketingPermission: true,
+    isoCountryCode: 'FIN'
   }
 }

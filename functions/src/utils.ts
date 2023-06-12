@@ -59,3 +59,12 @@ export const calculateDaysBetween = (startDate: string, endDate: string): { week
   }
   return { weekendDays, weekDays, totalDays: dayjs(endDate).diff(startDate, "days") }
 }
+
+/**
+ * Draws random item from given array
+ * @param array Array to draw the random item from
+ * @returns random item
+ */
+export const getRandomFrom = <T>(array: T[]): T => {
+  return array[getRandomInt(0, array.length - 1)]
+}

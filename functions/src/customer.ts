@@ -2,6 +2,9 @@
 
 export type Customer = {
   id: string
+  ssn?: string
+  email?: string
+  phoneNumber?: string
   dateOfBirth?: string
   gender?: 'Male' | 'Female' | 'Other'
   streetAddress?: string

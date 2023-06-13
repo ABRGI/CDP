@@ -93,7 +93,7 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
       totalLeisureBookings: 0,
       totalBusinessBookings: 0,
 
-      totalGuestBookings: 1,
+      totalBookingsAsGuest: 1,
       totalBookings: 0,
 
       blocked: r.state === "BLOCKED",
@@ -137,7 +137,7 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
     latestCheckOutDate: r.checkOut,
     latestHotel: r.hotel,
 
-    totalGuestBookings: c.totalGuestBookings + 1,
+    totalBookingsAsGuest: c.totalBookingsAsGuest + 1,
     blocked: r.state === "BLOCKED",
 
     totalWeekDays: weekDays,

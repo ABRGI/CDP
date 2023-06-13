@@ -138,7 +138,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalLeisureBookings: r.customerPurposeOfVisit === "LEISURE" ? 1 : 0,
       totalBusinessBookings: r.customerPurposeOfVisit === "BUSINESS" ? 1 : 0,
 
-      totalGuestBookings: 0,
+      totalBookingsAsGuest: 0,
       totalBookings: 1,
 
       blocked: r.state === "BLOCKED",
@@ -213,7 +213,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalLeisureBookings: c.totalLeisureBookings + nc.totalLeisureBookings,
     totalBusinessBookings: c.totalBookingComBookings + nc.totalBusinessBookings,
 
-    totalGuestBookings: c.totalGuestBookings,
+    totalBookingsAsGuest: c.totalBookingsAsGuest,
     totalBookings: c.totalBookings + 1,
 
     blocked: c.blocked || nc.blocked,

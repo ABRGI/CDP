@@ -37,7 +37,7 @@ export type Customer = {
   totalLeisureBookings: number
   totalBusinessBookings: number
 
-  totalGuestBookings: number
+  totalBookingsAsGuest: number
   totalBookings: number
 
   blocked: boolean

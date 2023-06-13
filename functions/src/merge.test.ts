@@ -1,9 +1,11 @@
 import { Customer } from "./customer";
 import { CustomerMerger } from "./merge";
-import { createCustomerFromReservation, isMatch } from "./reservation";
+import { Reservation, createCustomerFromReservation, isMatch, mapReservationValue } from "./reservation";
 import "jest"
 import { generateNewGuest, generateNewReservation } from "./test/utils";
 import dayjs from "dayjs";
+import { loadCsv } from "./utils";
+import { Guest, mapGuestValue } from "./guest";
 
 describe('Merge tests', () => {
   beforeEach(() => {
@@ -79,7 +81,7 @@ describe('Merge tests', () => {
 
     const guestCustomer = customers[1]
     expect(guestCustomer.includesChildren).toBe(true)
-    expect(guestCustomer.totalGuestBookings).toBe(1)
+    expect(guestCustomer.totalBookingsAsGuest).toBe(1)
     expect(guestCustomer.latestCheckInDate).toEqual(customer.latestCheckInDate)
     expect(guestCustomer.latestCheckOutDate).toEqual(customer.latestCheckOutDate)
     expect(guestCustomer.latestHotel).toEqual(customer.latestHotel)
@@ -108,7 +110,21 @@ describe('Merge tests', () => {
     const customers = merger.getCustomers()
     const gc = customers[1]
     expect(gc.totalBookings).toBe(1)
-    expect(gc.totalGuestBookings).toBe(1)
+    expect(gc.totalBookingsAsGuest).toBe(1)
     expect(gc.totalHotelBookingCounts).toEqual([{ hotel: 'HKI2', count: 1 }])
+  })
+
+  test('load sampled data', async () => {
+    const reservations = await loadCsv<Reservation>('test-data/reservations_sample_05312023.csv', mapReservationValue)
+    const merger = new CustomerMerger()
+    for (const r of reservations) {
+      merger.addReservation(r)
+    }
+    const guests = await loadCsv<Guest>('test-data/guest_sample_05312023.csv', mapGuestValue)
+    for (const g of guests) {
+      merger.addGuest(g)
+    }
+    // console.log(merger.getCustomers())
+    console.log(merger.getCustomers().length)
   })
 });

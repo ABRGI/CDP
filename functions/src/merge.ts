@@ -81,10 +81,18 @@ export class CustomerMerger {
     return
   }
 
+  /**
+   * Get list of all customers
+   * @returns All customers
+   */
   getCustomers(): Customer[] {
     return Object.values(this.customers)
   }
 
+  /**
+   * Adds customer to the indices
+   * @param customer Customer to add
+   */
   private addCustomerToIndices(customer: Customer): void {
     this.customers[customer.id] = customer
     if (customer.ssn) {

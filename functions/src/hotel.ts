@@ -10,10 +10,10 @@ export const mergeHotelCounts = (first: HotelCounts, second: HotelCounts): Hotel
   const hotels = new Set(first.concat(second).map(h => h.hotel))
 
   const merged: HotelCounts = []
-  for (const hotel of hotels.keys()) {
+  for (const hotel of hotels.values()) {
     merged.push({
       hotel, count: (first.find(h => h.hotel === hotel)?.count || 0) +
-        (second.find(h => h.hotel)?.count || 0)
+        (second.find(h => h.hotel === hotel)?.count || 0)
     })
   }
   return merged

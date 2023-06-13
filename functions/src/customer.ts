@@ -45,9 +45,6 @@ export type Customer = {
   totalWeekDays: number
   totalWeekendDays: number
 
-  weekdayPercentage: number   // 0-100%
-  weekendPercentage: number   // 0-100%
-
   totalHotelBookingCounts: { hotel: string, count: number }[]
 
   marketingPermission: boolean

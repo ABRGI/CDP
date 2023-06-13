@@ -114,17 +114,78 @@ describe('Merge tests', () => {
     expect(gc.totalHotelBookingCounts).toEqual([{ hotel: 'HKI2', count: 1 }])
   })
 
-  test('load sampled data', async () => {
-    const reservations = await loadCsv<Reservation>('test-data/reservations_sample_05312023.csv', mapReservationValue)
+  test('Basic metrics from several reservations', () => {
+    const r1 = generateNewReservation()
+    const r2 = generateNewReservation()
+
+    r1.checkIn = "2023-03-01 14:00"
+    r1.checkOut = "2023-03-03 12:00"
+    r1.created = "2023-02-20"
+    r1.hotel = "TKU1"
+    r1.customerPurposeOfVisit = "LEISURE"
+
+    r2.customerSsn = r1.customerSsn
+    r2.checkIn = "2023-06-09 14:00"
+    r2.checkOut = "2023-06-10 12:00"
+    r2.created = "2023-06-04"
+    r2.hotel = "TKU2"
+    r2.customerPurposeOfVisit = "LEISURE"
+
     const merger = new CustomerMerger()
-    for (const r of reservations) {
-      merger.addReservation(r)
-    }
-    const guests = await loadCsv<Guest>('test-data/guest_sample_05312023.csv', mapGuestValue)
-    for (const g of guests) {
-      merger.addGuest(g)
-    }
-    // console.log(merger.getCustomers())
-    console.log(merger.getCustomers().length)
+    merger.addReservation(r1)
+    merger.addReservation(r2)
+
+    const customers = merger.getCustomers()
+    expect(customers.length).toBe(1)
+
+    const customer = customers[0]
+    expect(customer.avgBookingFrequencyDays).toBeCloseTo(100)
+    expect(customer.avgBookingsPerYear).toBeCloseTo(2)
+    expect(customer.lifetimeSpend).toBeCloseTo(198)
+    expect(customer.bookingNightsCounts).toEqual([2, 1])
+    expect(customer.bookingPeopleCounts).toEqual([1, 1])
+    expect(customer.bookingLeadTimesDays).toEqual([10, 6])
+    expect(customer.avgNightsPerBooking).toBeCloseTo(1.5)
+    expect(customer.avgPeoplePerBooking).toBeCloseTo(1)
+    expect(customer.avgLeadTimeDays).toBeCloseTo(8)
+    expect(customer.latestHotel).toEqual(r2.hotel)
+    expect(customer.totalWeekDays).toBe(3)
+    expect(customer.totalWeekendDays).toBe(0)
+    expect(customer.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 1 }])
+    expect(customer.marketingPermission).toBe(true)
+
+    const r3 = generateNewReservation()
+    r3.customerSsn = r2.customerSsn
+    r3.checkIn = "2024-08-01 14:00"
+    r3.checkOut = "2024-08-07 12:00"
+    r3.created = "2024-07-15"
+    r3.hotel = "TKU2"
+    r3.marketingPermission = false
+    r3.customerPurposeOfVisit = "BUSINESS"
+    merger.addReservation(r3)
+
+    const customersUpd = merger.getCustomers()
+    expect(customersUpd.length).toBe(1)
+
+    const customerUpd = customersUpd[0]
+    expect(customerUpd.avgBookingFrequencyDays).toBeCloseTo(259.5)
+    expect(customerUpd.avgBookingsPerYear).toBeCloseTo(1.5)
+    expect(customerUpd.lifetimeSpend).toBeCloseTo(297)
+    expect(customerUpd.bookingNightsCounts).toEqual([2, 1, 6])
+    expect(customerUpd.bookingPeopleCounts).toEqual([1, 1, 1])
+    expect(customerUpd.bookingLeadTimesDays).toEqual([10, 6, 18])
+    expect(customerUpd.avgNightsPerBooking).toBeCloseTo(3)
+    expect(customerUpd.avgPeoplePerBooking).toBeCloseTo(1)
+    expect(customerUpd.avgLeadTimeDays).toBeCloseTo(11.33)
+    expect(customerUpd.firstCheckInDate).toEqual("2023-03-01 14:00")
+    expect(customerUpd.latestCheckInDate).toEqual("2024-08-01 14:00")
+    expect(customerUpd.latestCheckOutDate).toEqual("2024-08-07 12:00")
+    expect(customerUpd.latestHotel).toEqual(r3.hotel)
+    expect(customerUpd.totalWeekDays).toBe(7)
+    expect(customerUpd.totalWeekendDays).toBe(2)
+    expect(customerUpd.totalBookings).toBe(3)
+    expect(customerUpd.totalLeisureBookings).toBe(2)
+    expect(customerUpd.totalBusinessBookings).toBe(1)
+    expect(customerUpd.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 2 }])
   })
 });

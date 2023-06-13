@@ -58,7 +58,7 @@ export const isGuestMatch = (r1: Guest, r2: Guest): boolean => {
  */
 export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | undefined => {
   if (g.ssn || g.email || g.mobile) {
-    const { weekendDays, weekDays, totalDays } = calculateDaysBetween(r.checkIn, r.checkOut)
+    const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
       id: createHashId(`${r.id}-${g.id}`),
       ssn: g.ssn,
@@ -100,8 +100,6 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
 
       totalWeekDays: weekDays,
       totalWeekendDays: weekendDays,
-      weekdayPercentage: weekDays / totalDays,
-      weekendPercentage: weekendDays / totalDays,
 
       totalHotelBookingCounts: [],
 
@@ -142,8 +140,6 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
 
     totalWeekDays: weekDays,
     totalWeekendDays: weekendDays,
-    weekdayPercentage: weekDays / totalDays,
-    weekendPercentage: weekendDays / totalDays,
 
     marketingPermission: nc.marketingPermission
   }

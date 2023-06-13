@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { createHashId } from "./utils"
+import { calculateDaysBetween, createHashId } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 
 export type Reservation = {
@@ -100,10 +100,9 @@ export const isMatch = (r1: Reservation, r2: Reservation): boolean => {
  */
 export const createCustomerFromReservation = (r: Reservation): Customer | undefined => {
   if (r.customerSsn || r.customerEmailReal || r.customerMobile) {
-    const checkInDay = dayjs(r.checkIn).day()
-    const bookingTotalNights = dayjs(r.checkOut).diff(r.checkIn, "days")
-    const leadTimeDays = dayjs(r.checkIn).diff(r.created, "days")
-    const weekend = checkInDay === 0 || checkInDay === 6
+    const bookingTotalNights = Math.round(dayjs(r.checkOut).diff(r.checkIn, "hours") / 24)
+    const leadTimeDays = Math.round(dayjs(r.checkIn).diff(r.created, "hours") / 24)
+    const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
       id: createHashId(`${r.id}`),
       ssn: r.customerSsn,
@@ -143,10 +142,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       blocked: r.state === "BLOCKED",
 
-      totalWeekDays: weekend ? 0 : bookingTotalNights,
-      totalWeekendDays: weekend ? bookingTotalNights : 0,
-      weekdayPercentage: weekend ? 0 : 1,
-      weekendPercentage: weekend ? 1 : 0,
+      totalWeekDays: weekDays,
+      totalWeekendDays: weekendDays,
 
       totalHotelBookingCounts: [{ hotel: r.hotel, count: 1 }],
 
@@ -166,15 +163,11 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
   if (!nc) {
     return c
   }
-  const nights = dayjs(r.checkOut).diff(r.checkIn, "days")
+  const avgBookingsPerYear = (c.totalBookings + 1) / (dayjs(r.checkIn).diff(c.firstCheckInDate, "years") + 1)
 
-  const avgBookingsPerYear = dayjs(r.checkIn).diff(c.firstCheckInDate, "years") /
-    (c.totalBookings + 1)
+  const avgBookingFrequencyDays = dayjs(r.checkIn).diff(c.firstCheckInDate, "days") / c.totalBookings
 
-  const avgBookingFrequencyDays = (c.avgBookingFrequencyDays * c.totalBookings +
-    dayjs(c.latestCheckInDate).diff(r.checkIn, "days")) / (c.totalBookings + 1)
-
-  const avgNightsPerBooking = (c.avgNightsPerBooking * c.totalBookings + nights) / (c.totalBookings + 1)
+  const avgNightsPerBooking = (c.avgNightsPerBooking * c.totalBookings + nc.avgNightsPerBooking) / (c.totalBookings + 1)
 
   const avgLeadTimeDays = (c.bookingLeadTimesDays.reduce((t, c) => t + c, 0) +
     nc.avgLeadTimeDays) / (c.bookingLeadTimesDays.length + 1)
@@ -220,9 +213,6 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     totalWeekDays: c.totalWeekDays + nc.totalWeekDays,
     totalWeekendDays: c.totalWeekendDays + nc.totalWeekendDays,
-
-    weekdayPercentage: (c.weekdayPercentage * c.totalBookings + nc.weekdayPercentage) / (c.totalBookings + 1),
-    weekendPercentage: (c.weekendPercentage * c.totalBookings + nc.weekendPercentage) / (c.totalBookings + 1),
 
     totalHotelBookingCounts: mergeHotelCounts(c.totalHotelBookingCounts, nc.totalHotelBookingCounts),
 

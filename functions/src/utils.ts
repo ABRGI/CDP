@@ -57,7 +57,7 @@ export const calculateDaysBetween = (startDate: string, endDate: string): { week
     }
     currDate = currDate.add(1, "day")
   }
-  return { weekendDays, weekDays, totalDays: dayjs(endDate).diff(startDate, "days") }
+  return { weekendDays, weekDays, totalDays: Math.round(dayjs(endDate).diff(startDate, "hours") / 24) }
 }
 
 /**

@@ -39,6 +39,12 @@ const summarizeData = async (reservationFilename: string, guestFilename: string)
   const customers = merger.getCustomers()
   console.log(`Total customer profiles: ${customers.length}`)
   console.log(`Total bookings: ${customers.reduce((t, c) => t + c.totalBookings, 0)}`)
+
+  for (const guest of guests) {
+    console.log((guest.ssn || "").padEnd(30, " ") + " " +
+      (guest.mobile || "").padEnd(30, " ") + " " +
+      (guest.email || "").padEnd(60, " "))
+  }
 }
 
 summarizeData('test-data/reservations_sample_05312023.csv', 'test-data/guest_sample_05312023.csv').then(() => {

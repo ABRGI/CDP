@@ -33,16 +33,20 @@ const guestBools = new Set([
 ])
 
 export const mapGuestValue = (props: { header: string, value: string }): boolean | string | number | undefined => {
-  if (props.value === '') {
+  const value = props.value.trim()
+  if (value === '') {
     return
   }
   if (guestInt.has(props.header)) {
-    return parseInt(props.value, 10)
+    return parseInt(value, 10)
   }
   if (guestBools.has(props.header)) {
-    return props.value === "TRUE"
+    return value === "TRUE"
   }
-  return props.value
+  if (props.header === "mobile") {
+    return value.trim().replace(/ /g, "").replace(/^0/, "+358")
+  }
+  return value
 }
 
 export const isGuestMatch = (r1: Guest, r2: Guest): boolean => {

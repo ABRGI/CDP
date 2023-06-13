@@ -69,22 +69,26 @@ const reservationBools = new Set([
 ])
 
 export const mapReservationValue = (props: { header: string, value: string }): boolean | string | number | undefined => {
-  if (props.value === '') {
+  const value = props.value.trim()
+  if (value === '') {
     return
   }
   if (props.header === 'reservationExtraInfo') {
-    return JSON.parse(props.value)
+    return JSON.parse(value)
   }
   if (reservationInt.has(props.header)) {
-    return parseInt(props.value, 10)
+    return parseInt(value, 10)
   }
   if (reservationFloats.has(props.header)) {
-    return parseFloat(props.value)
+    return parseFloat(value)
   }
   if (reservationBools.has(props.header)) {
-    return props.value === "TRUE"
+    return value === "TRUE"
   }
-  return props.value
+  if (props.header === "customerMobile") {
+    return value.replace(/ /g, "").replace(/ /g, "").replace(/^0/, "+358")
+  }
+  return value
 }
 
 

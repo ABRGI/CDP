@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import dayjs from 'dayjs'
 import { createReadStream } from 'fs'
 import { writeFileSync } from 'fs'
 const csv = require('csv-parser')
@@ -37,4 +38,33 @@ export const writeCsv = <T>(rows: T[], filename: string) => {
 
 export const createHashId = (value: string): string => {
   return createHash('sha256').update(value).digest('hex')
+}
+
+/**
+ * Calculates number of weekend and week days in between to dates
+ * @param startdate YYYY-MM-DD
+ * @param endDate YYYY-MM-DD
+ */
+export const calculateDaysBetween = (startDate: string, endDate: string): { weekendDays: number, weekDays: number, totalDays: number } => {
+  let weekendDays = 0
+  let weekDays = 0
+  let currDate = dayjs(startDate)
+  while (!currDate.isAfter(endDate)) {
+    if (currDate.day() <= 1) {
+      weekendDays++
+    } else {
+      weekDays++
+    }
+    currDate = currDate.add(1, "day")
+  }
+  return { weekendDays, weekDays, totalDays: Math.round(dayjs(endDate).diff(startDate, "hours") / 24) }
+}
+
+/**
+ * Draws random item from given array
+ * @param array Array to draw the random item from
+ * @returns random item
+ */
+export const getRandomFrom = <T>(array: T[]): T => {
+  return array[getRandomInt(0, array.length - 1)]
 }

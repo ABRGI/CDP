@@ -39,12 +39,9 @@ export class CustomerMerger {
    * @param g Guest to add
    */
   addGuest(g: Guest) {
-    // Handling the guest customer profile
+    // Handling the guest customer profile, it is only added if such customer does not exist
     const customerId = this.getExistingCustomer(g.ssn, g.email, g.mobile)
-    if (customerId) {
-      this.reservationCustomerId[g.id] = customerId
-      this.customers[customerId] = mergeGuestToCustomer(this.customers[customerId], this.reservations[g.reservationId], g)
-    } else {
+    if (!customerId) {
       const customer = createCustomerFromGuest(this.reservations[g.reservationId], g)
       if (customer) {
         this.addCustomerToIndices(customer)
@@ -55,7 +52,7 @@ export class CustomerMerger {
     const reservationCustomerId = this.reservationCustomerId[g.reservationId]
     if (reservationCustomerId) {
       const customer = this.customers[reservationCustomerId]
-      if (customer) {
+      if (customer && !this.isGuestMatch(customer, g)) {
         this.customers[reservationCustomerId] = addGuestToCustomer(customer, g)
       }
     }
@@ -104,5 +101,24 @@ export class CustomerMerger {
     if (customer.phoneNumber) {
       this.phoneNumberIds[customer.phoneNumber] = customer.id
     }
+  }
+
+  private isGuestMatch(customer: Customer, g: Guest): boolean {
+    if (customer.ssn === g.ssn) {
+      return true
+    }
+    if (customer.ssn && g.ssn) {
+      return false
+    }
+    if (customer.email === g.email) {
+      return true
+    }
+    if (customer.email && g.email) {
+      return false
+    }
+    if (customer.phoneNumber === g.mobile) {
+      return true
+    }
+    return false
   }
 }

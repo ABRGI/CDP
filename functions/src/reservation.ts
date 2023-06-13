@@ -180,7 +180,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     phoneNumber: nc.phoneNumber || c.phoneNumber,
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
     isoCountryCode: c.isoCountryCode || nc.dateOfBirth,
-    level: c.level,
+    level: c.level === 'Guest' ? 'New' : c.level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
 
     bookingNightsCounts: c.bookingNightsCounts.concat(nc.bookingNightsCounts),

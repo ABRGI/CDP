@@ -112,6 +112,39 @@ describe('Merge tests', () => {
     expect(gc.totalBookings).toBe(1)
     expect(gc.totalBookingsAsGuest).toBe(1)
     expect(gc.totalHotelBookingCounts).toEqual([{ hotel: 'HKI2', count: 1 }])
+    expect(gc.level).toEqual('New')
+  })
+
+  test('Should not update guest for booking customer', () => {
+    const merger = new CustomerMerger()
+
+    const reservation = generateNewReservation()
+    merger.addReservation(reservation)
+    const customer = merger.getCustomers()[0]
+
+    const guest = generateNewGuest(reservation.id)
+    guest.ssn = reservation.customerSsn
+    merger.addGuest(guest)
+
+    const customerUpd = merger.getCustomers()[0]
+    expect(customer).toEqual(customerUpd)
+  })
+
+  test('Should update guest for customer not booking the reservation', () => {
+    const merger = new CustomerMerger()
+
+    const reservation = generateNewReservation()
+    merger.addReservation(reservation)
+    const customer = merger.getCustomers()[0]
+
+    const guest = generateNewGuest(reservation.id)
+    merger.addGuest(guest)
+
+    const customerUpd = merger.getCustomers()[0]
+    expect(customerUpd.bookingPeopleCounts).toEqual([2])
+    expect(customer.bookingPeopleCounts).toEqual([1])
+    expect({ ...customer, bookingPeopleCounts: [2] }).toEqual(customerUpd)
+
   })
 
   test('Basic metrics from several reservations', () => {

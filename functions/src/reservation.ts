@@ -68,7 +68,7 @@ const reservationBools = new Set([
   "marketingPermission", "breakfastsForAll"
 ])
 
-export const mapReservationValue = (props: { header: string, value: string }): boolean | string | number | undefined => {
+export const mapReservationValue = (props: { header: string, value: string }): boolean | string | number | undefined | object => {
   const value = props.value.trim()
   if (value === '') {
     return

@@ -105,7 +105,10 @@ const generateGuestRow = (customer: Reservation): Guest => {
     nationality: customer.customerNationality,
     dateOfBirth: generateBirthDate(false),
     marketingPermission: customer.marketingPermission,
-    isoCountryCode: customer.customerIsoCountryCode
+    isoCountryCode: customer.customerIsoCountryCode,
+    ssn: generateHash(),
+    email: generateEmail(),
+    mobile: generatePhoneNumber()
   }
 }
 

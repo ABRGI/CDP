@@ -125,7 +125,7 @@ export const generateNewGuest = (reservationId?: number): Guest => {
     email: generateEmail(),
     mobile: generatePhoneNumber(),
     ssn: generateHash(),
-    dateOfBirth: generateBirthDate(false),
+    dateOfBirth: generateBirthDate(true),
     purposeOfVisit: getRandomFrom(["LEISURE", "BUSINESS"]),
     passportNumber: generateHash(),
     marketingPermission: true,

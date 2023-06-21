@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { Reservation } from "./reservation"
-import { calculateDaysBetween, createHashId } from "./utils"
+import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 
 export type Guest = {
@@ -64,7 +64,7 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
   if (g.ssn || g.email || g.mobile) {
     const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
-      id: createHashId(`${r.id}-${g.id}`),
+      id: `G-${g.id}`,
       ssn: g.ssn,
       email: g.email,
       phoneNumber: g.mobile,
@@ -99,6 +99,7 @@ export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | un
 
       totalBookingsAsGuest: 1,
       totalBookings: 0,
+      totalBookingCancellations: 0,
 
       blocked: r.state === "BLOCKED",
 
@@ -161,6 +162,6 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
     ...c,
     includesChildren: c.includesChildren || dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
     bookingPeopleCounts,
-    avgPeoplePerBooking: c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length,
+    avgPeoplePerBooking: RoundToTwo(c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length),
   }
 }

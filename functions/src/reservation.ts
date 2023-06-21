@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { calculateDaysBetween, createHashId } from "./utils"
+import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 
 export type Reservation = {
@@ -105,10 +105,10 @@ export const isMatch = (r1: Reservation, r2: Reservation): boolean => {
 export const createCustomerFromReservation = (r: Reservation): Customer | undefined => {
   if (r.customerSsn || r.customerEmailReal || r.customerMobile) {
     const bookingTotalNights = Math.round(dayjs(r.checkOut).diff(r.checkIn, "hours") / 24)
-    const leadTimeDays = Math.round(dayjs(r.checkIn).diff(r.created, "hours") / 24)
+    const leadTimeDays = RoundToTwo(dayjs(r.checkIn).diff(r.created, "hours") / 24)
     const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
-      id: createHashId(`${r.id}`),
+      id: `R-${r.id}`,
       ssn: r.customerSsn,
       email: r.customerEmailReal,
       phoneNumber: r.customerMobile,
@@ -143,7 +143,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       totalBookingsAsGuest: 0,
       totalBookings: 1,
-
+      totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
       blocked: r.state === "BLOCKED",
 
       totalWeekDays: weekDays,
@@ -167,16 +167,16 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
   if (!nc) {
     return c
   }
-  const avgBookingsPerYear = (c.totalBookings + 1) / (dayjs(r.checkIn).diff(c.firstCheckInDate, "years") + 1)
+  const avgBookingsPerYear = RoundToTwo((c.totalBookings + 1) / (dayjs(r.checkIn).diff(c.firstCheckInDate, "years") + 1))
 
-  const avgBookingFrequencyDays = dayjs(r.checkIn).diff(c.firstCheckInDate, "days") / c.totalBookings
+  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(c.firstCheckInDate, "days") / c.totalBookings)
 
-  const avgNightsPerBooking = (c.avgNightsPerBooking * c.totalBookings + nc.avgNightsPerBooking) / (c.totalBookings + 1)
+  const avgNightsPerBooking = RoundToTwo((c.avgNightsPerBooking * c.totalBookings + nc.avgNightsPerBooking) / (c.totalBookings + 1))
 
-  const avgLeadTimeDays = (c.bookingLeadTimesDays.reduce((t, c) => t + c, 0) +
-    nc.avgLeadTimeDays) / (c.bookingLeadTimesDays.length + 1)
+  const avgLeadTimeDays = RoundToTwo((c.bookingLeadTimesDays.reduce((t, c) => t + c, 0) +
+    nc.avgLeadTimeDays) / (c.bookingLeadTimesDays.length + 1))
 
-  const avgPeoplePerBooking = (c.bookingPeopleCounts.reduce((t, c) => t + c, 0) + 1) / (c.totalBookings + 1)
+  const avgPeoplePerBooking = RoundToTwo((c.bookingPeopleCounts.reduce((t, c) => t + c, 0) + 1) / (c.totalBookings + 1))
 
   return {
     ...c,
@@ -198,9 +198,10 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     avgPeoplePerBooking,
     avgLeadTimeDays,
 
-    latestCheckInDate: nc.latestCheckInDate,
-    latestCheckOutDate: nc.latestCheckOutDate,
-    latestHotel: nc.latestHotel,
+    firstCheckInDate: nc.firstCheckInDate.localeCompare(c.firstCheckInDate) < 0 ? nc.firstCheckInDate : c.firstCheckInDate,
+    latestCheckInDate: nc.latestCheckInDate.localeCompare(c.latestCheckInDate) > 0 ? nc.latestCheckInDate : c.latestCheckInDate,
+    latestCheckOutDate: nc.latestCheckOutDate.localeCompare(c.latestCheckOutDate) > 0 ? nc.latestCheckOutDate : c.latestCheckOutDate,
+    latestHotel: nc.latestCheckInDate.localeCompare(c.latestCheckInDate) > 0 ? nc.latestHotel : c.latestHotel,
 
     totalBookingComBookings: c.totalBookingComBookings + nc.totalBookingComBookings,
     totalExpediaBookings: c.totalExpediaBookings + nc.totalExpediaBookings,
@@ -212,6 +213,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     totalBookingsAsGuest: c.totalBookingsAsGuest,
     totalBookings: c.totalBookings + 1,
+    totalBookingCancellations: c.totalBookingCancellations + nc.totalBookingCancellations,
 
     blocked: c.blocked || nc.blocked,
 

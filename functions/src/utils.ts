@@ -41,6 +41,14 @@ export const createHashId = (value: string): string => {
 }
 
 /**
+ * Round given numeric value to two decimals
+ * @param value Number to round
+ */
+export const RoundToTwo = (value: number): number => {
+  return Math.round(value * 100) / 100.0
+}
+
+/**
  * Calculates number of weekend and week days in between to dates
  * @param startdate YYYY-MM-DD
  * @param endDate YYYY-MM-DD

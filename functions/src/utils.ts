@@ -76,3 +76,24 @@ export const calculateDaysBetween = (startDate: string, endDate: string): { week
 export const getRandomFrom = <T>(array: T[]): T => {
   return array[getRandomInt(0, array.length - 1)]
 }
+
+/**
+ * Calculates if string Levehstein distance is more than given max distance
+ * @param a First string to calculate distance for
+ * @param b Second string to  calculate distance for
+ * @param maxDistance Maximum allowed distance
+ * @returns If distance is equal or less than maximum distance this will return true, otherwise false
+ */
+export const distanceMoreThan = (a: string, b: string, maxDistance: number): boolean => {
+  function distanceMax(currDis: number, aStart: number, bStart: number): boolean {
+    if (currDis > maxDistance) return true
+    if (aStart >= a.length) return currDis + (b.length - bStart) > maxDistance
+    if (bStart >= b.length) return currDis + (a.length - aStart) > maxDistance
+    if (a.charCodeAt(aStart) === b.charCodeAt(bStart))
+      return distanceMax(currDis, aStart + 1, bStart + 1)
+    return distanceMax(currDis + 1, aStart + 1, bStart) &&
+      distanceMax(currDis + 1, aStart, bStart + 1) &&
+      distanceMax(currDis + 1, aStart + 1, bStart + 1)
+  }
+  return distanceMax(0, 0, 0)
+}

@@ -1,4 +1,5 @@
-import { Customer } from "./customer"
+import { Customer, calculateCustomerMatchPoints } from "./customer"
+import { Dictionary } from "./dictionary"
 import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 
@@ -11,9 +12,14 @@ export class CustomerMerger {
   emailIds: { [email: string]: string } = {}
   ssnIds: { [ssn: string]: string } = {}
   phoneNumberIds: { [phoneNumber: string]: string } = {}
+  nameIds: { [name: string]: string[] } = {}
   customers: { [id: string]: Customer } = {}
   reservations: { [id: string]: Reservation } = {}
   reservationCustomerId: { [reservationId: string]: string } = {}
+
+  emailDictionary: Dictionary = new Dictionary()
+  phoneNumberDictionary: Dictionary = new Dictionary()
+  namesDictionary: Dictionary = new Dictionary()
 
   /**
    * Add reservation information to the customer profiles or creates a new one
@@ -21,7 +27,8 @@ export class CustomerMerger {
    */
   addReservation(r: Reservation) {
     this.reservations[r.id] = r
-    const customerId = this.getExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile)
+    const customerId = this.getExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
+      r.customerFirstName, r.customerLastName)
     if (customerId) {
       this.reservationCustomerId[r.id] = customerId
       this.customers[customerId] = mergeReservationToCustomer(this.customers[customerId], r)
@@ -65,17 +72,42 @@ export class CustomerMerger {
    * @param phoneNumber phone number
    * @returns customer ID if one is found, undefined otherwise
    */
-  getExistingCustomer(ssn?: string, email?: string, phoneNumber?: string): string | undefined {
+  getExistingCustomer(ssn?: string, email?: string, phoneNumber?: string, firstName?: string, lastName?: string): string | undefined {
+    const potentials = new Set<string>()
     if (ssn && ssn in this.ssnIds) {
-      return this.ssnIds[ssn]
+      potentials.add(this.ssnIds[ssn])
     }
-    if (email && email in this.emailIds) {
-      return this.emailIds[email]
+    if (email) {
+      const matches = this.emailDictionary.findMatches(email, 1)
+      for (const match of matches) {
+        potentials.add(this.emailIds[match])
+      }
     }
-    if (phoneNumber && phoneNumber in this.phoneNumberIds) {
-      return this.phoneNumberIds[phoneNumber]
+    if (phoneNumber) {
+      const matches = this.phoneNumberDictionary.findMatches(phoneNumber, 1)
+      for (const match of matches) {
+        potentials.add(this.phoneNumberIds[match])
+      }
     }
-    return
+    if (firstName && lastName) {
+      const matches = this.namesDictionary.findMatches(`${firstName} ${lastName}`, 1)
+      for (const match of matches) {
+        for (const id of this.nameIds[match]) {
+          potentials.add(id)
+        }
+      }
+    }
+    let maxPoints = -1000
+    let maxCustomer: Customer | undefined
+    for (const id of potentials.values()) {
+      const customer = this.customers[id]
+      const points = calculateCustomerMatchPoints(customer, ssn, email, phoneNumber, firstName, lastName)
+      if (points > maxPoints && points > 1) {
+        maxPoints = points
+        maxCustomer = customer
+      }
+    }
+    return maxCustomer?.id
   }
 
   /**
@@ -97,28 +129,30 @@ export class CustomerMerger {
     }
     if (customer.email) {
       this.emailIds[customer.email] = customer.id
+      this.emailDictionary.addString(customer.email)
     }
     if (customer.phoneNumber) {
       this.phoneNumberIds[customer.phoneNumber] = customer.id
+      this.phoneNumberDictionary.addString(customer.phoneNumber)
+    }
+    if (customer.firstName && customer.lastName) {
+      const name = `${customer.firstName} ${customer.lastName}`
+      if (!(name in this.nameIds)) {
+        this.nameIds[name] = [customer.id]
+      } else {
+        this.nameIds[name].push(customer.id)
+      }
+      this.namesDictionary.addString(`${customer.firstName} ${customer.lastName}`)
     }
   }
 
+  /**
+   * Checks if given customer matches the given guest
+   * @param customer Customer
+   * @param g Guest
+   * @returns True if guest and customer are matches
+   */
   private isGuestMatch(customer: Customer, g: Guest): boolean {
-    if (customer.ssn === g.ssn) {
-      return true
-    }
-    if (customer.ssn && g.ssn) {
-      return false
-    }
-    if (customer.email === g.email) {
-      return true
-    }
-    if (customer.email && g.email) {
-      return false
-    }
-    if (customer.phoneNumber === g.mobile) {
-      return true
-    }
-    return false
+    return calculateCustomerMatchPoints(customer, g.ssn, g.email, g.mobile, g.firstName, g.lastName) > 1
   }
 }

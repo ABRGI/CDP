@@ -17,6 +17,20 @@ export const loadCsv = async <T>(filename: string, mapValues?: (props: { header:
   })
 }
 
+export const streamCsv = async <T>(filename: string,
+  handleData: (row: T) => void,
+  mapValues?: (props: { header: string, value: string }) => any): Promise<void> => {
+  return await new Promise((resolve, reject) => {
+    createReadStream(filename)
+      .pipe(csv({ mapHeaders: ({ header }: { header: string }) => camelize(header), mapValues }))
+      .on('error', (error: any) => reject(error))
+      .on('data', (row: T) => handleData(row))
+      .on('end', () => {
+        resolve()
+      });
+  })
+}
+
 export const camelize = (str: string): string => {
   return str.replace(/_/g, ' ').replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
     return index === 0 ? word.toLowerCase() : word.toUpperCase();
@@ -77,6 +91,17 @@ export const getRandomFrom = <T>(array: T[]): T => {
   return array[getRandomInt(0, array.length - 1)]
 }
 
+function distanceMax(a: string, b: string, currDis: number, aStart: number, bStart: number, maxDistance: number): boolean {
+  if (currDis > maxDistance) return true
+  if (aStart >= a.length) return currDis + (b.length - bStart) > maxDistance
+  if (bStart >= b.length) return currDis + (a.length - aStart) > maxDistance
+  if (a.charCodeAt(aStart) === b.charCodeAt(bStart))
+    return distanceMax(a, b, currDis, aStart + 1, bStart + 1, maxDistance)
+  return distanceMax(a, b, currDis + 1, aStart + 1, bStart, maxDistance) &&
+    distanceMax(a, b, currDis + 1, aStart, bStart + 1, maxDistance) &&
+    distanceMax(a, b, currDis + 1, aStart + 1, bStart + 1, maxDistance)
+}
+
 /**
  * Calculates if string Levehstein distance is more than given max distance
  * @param a First string to calculate distance for
@@ -85,15 +110,5 @@ export const getRandomFrom = <T>(array: T[]): T => {
  * @returns If distance is equal or less than maximum distance this will return true, otherwise false
  */
 export const distanceMoreThan = (a: string, b: string, maxDistance: number): boolean => {
-  function distanceMax(currDis: number, aStart: number, bStart: number): boolean {
-    if (currDis > maxDistance) return true
-    if (aStart >= a.length) return currDis + (b.length - bStart) > maxDistance
-    if (bStart >= b.length) return currDis + (a.length - aStart) > maxDistance
-    if (a.charCodeAt(aStart) === b.charCodeAt(bStart))
-      return distanceMax(currDis, aStart + 1, bStart + 1)
-    return distanceMax(currDis + 1, aStart + 1, bStart) &&
-      distanceMax(currDis + 1, aStart, bStart + 1) &&
-      distanceMax(currDis + 1, aStart + 1, bStart + 1)
-  }
-  return distanceMax(0, 0, 0)
+  return distanceMax(a, b, 0, 0, 0, maxDistance)
 }

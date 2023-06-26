@@ -1,5 +1,5 @@
 import "jest"
-import { Dictionary } from "./dictionary";
+import { TreeDictionary } from "./dictionary";
 
 describe('Dictionary tests', () => {
   beforeEach(() => {
@@ -7,7 +7,7 @@ describe('Dictionary tests', () => {
   });
 
   test('finding matches', () => {
-    const dict = new Dictionary()
+    const dict = new TreeDictionary()
     dict.addString("mika@gmail.com")
     dict.addString("+3585012345678")
     dict.addString("luukas.luukuttaja@gmail.com")

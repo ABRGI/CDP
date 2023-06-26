@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { Reservation } from "./reservation"
+import { MinimalReservation, Reservation } from "./reservation"
 import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 
@@ -60,7 +60,7 @@ export const isGuestMatch = (r1: Guest, r2: Guest): boolean => {
  * @param g Guest information
  * @returns
  */
-export const createCustomerFromGuest = (r: Reservation, g: Guest): Customer | undefined => {
+export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Customer | undefined => {
   if (g.ssn || g.email || g.mobile) {
     const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {

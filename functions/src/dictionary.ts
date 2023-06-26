@@ -1,31 +1,57 @@
-import { distanceMoreThan } from "./utils"
 
-export class Dictionary {
-  strings: { [length: number]: string[] }
+export type Tree = {
+  value?: string,
+  trees: Map<number, number>
+}
+
+
+export class TreeDictionary {
+  treeIndex: number
+  allTrees: Tree[] = []
 
   constructor() {
-    this.strings = {}
+    this.allTrees.push({ trees: new Map() })
+    this.treeIndex = this.allTrees.length - 1
+  }
+
+  addStringInternal(str: string, index: number, treeIndex: number) {
+    if (index >= str.length) {
+      return
+    }
+    const ch = str.charCodeAt(index)
+    if (!this.allTrees[treeIndex].trees.has(ch)) {
+      this.allTrees.push({ value: index === str.length - 1 ? str : undefined, trees: new Map() })
+      this.allTrees[treeIndex].trees.set(ch, this.allTrees.length - 1)
+    }
+    if (index < str.length) this.addStringInternal(str, index + 1, this.allTrees[treeIndex].trees.get(ch)!)
+    return
   }
 
   addString(str: string) {
-    if (!(str.length in this.strings)) {
-      this.strings[str.length] = []
-    }
-    this.strings[str.length].push(str)
+    this.addStringInternal(str, 0, this.treeIndex)
   }
 
   findMatches(str: string, maxDistance: number): string[] {
-    const matches: string[] = []
+    return this.findMatchesInternal(str, 0, 0, maxDistance, this.treeIndex)
+  }
 
-    for (let l = str.length - maxDistance; l <= str.length + maxDistance; l++) {
-      if (l in this.strings) {
-        for (const currStr of this.strings[l]) {
-          if (currStr === str || !distanceMoreThan(str, currStr, maxDistance)) {
-            matches.push(currStr)
-          }
-        }
+  findMatchesInternal(str: string, index: number, currDistance: number, maxDistance: number, treeIndex: number): string[] {
+    if (currDistance > maxDistance) return []
+
+    let matches: string[] = []
+    if (this.allTrees[treeIndex].value && index === str.length) {
+      matches.push(this.allTrees[treeIndex].value!)
+    }
+
+    for (let [ch, nextTree] of this.allTrees[treeIndex].trees.entries()) {
+      if (index < str.length && ch === str.charCodeAt(index)) {
+        matches.push(...this.findMatchesInternal(str, index + 1, currDistance, maxDistance, nextTree))
+      } else if (currDistance + 1 <= maxDistance) {
+        matches.push(...this.findMatchesInternal(str, index + 1, currDistance + 1, maxDistance, treeIndex))
+        matches.push(...this.findMatchesInternal(str, index + 1, currDistance + 1, maxDistance, nextTree))
+        matches.push(...this.findMatchesInternal(str, index, currDistance + 1, maxDistance, nextTree))
       }
     }
-    return matches;
+    return matches
   }
 }

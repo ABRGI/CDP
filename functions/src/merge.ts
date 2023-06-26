@@ -1,7 +1,7 @@
 import { Customer, calculateCustomerMatchPoints } from "./customer"
-import { Dictionary } from "./dictionary"
+import { TreeDictionary } from "./dictionary"
 import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
-import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
+import { MinimalReservation, Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 
 
 /**
@@ -14,19 +14,25 @@ export class CustomerMerger {
   phoneNumberIds: { [phoneNumber: string]: string } = {}
   nameIds: { [name: string]: string[] } = {}
   customers: { [id: string]: Customer } = {}
-  reservations: { [id: string]: Reservation } = {}
+  reservations: { [id: string]: MinimalReservation } = {}
   reservationCustomerId: { [reservationId: string]: string } = {}
 
-  emailDictionary: Dictionary = new Dictionary()
-  phoneNumberDictionary: Dictionary = new Dictionary()
-  namesDictionary: Dictionary = new Dictionary()
+  emailDictionary = new TreeDictionary()
+  phoneNumberDictionary = new TreeDictionary()
+  namesDictionary = new TreeDictionary()
 
   /**
    * Add reservation information to the customer profiles or creates a new one
    * @param r Reservation to add
    */
   addReservation(r: Reservation) {
-    this.reservations[r.id] = r
+    this.reservations[r.id] = {
+      checkIn: r.checkIn,
+      checkOut: r.checkOut,
+      hotel: r.hotel,
+      state: r.state,
+      marketingPermission: r.marketingPermission
+    }
     const customerId = this.getExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
       r.customerFirstName, r.customerLastName)
     if (customerId) {
@@ -101,10 +107,12 @@ export class CustomerMerger {
     let maxCustomer: Customer | undefined
     for (const id of potentials.values()) {
       const customer = this.customers[id]
-      const points = calculateCustomerMatchPoints(customer, ssn, email, phoneNumber, firstName, lastName)
-      if (points > maxPoints && points > 1) {
-        maxPoints = points
-        maxCustomer = customer
+      if (customer) {
+        const points = calculateCustomerMatchPoints(customer, ssn, email, phoneNumber, firstName, lastName)
+        if (points > maxPoints && points > 1) {
+          maxPoints = points
+          maxCustomer = customer
+        }
       }
     }
     return maxCustomer?.id
@@ -142,7 +150,7 @@ export class CustomerMerger {
       } else {
         this.nameIds[name].push(customer.id)
       }
-      this.namesDictionary.addString(`${customer.firstName} ${customer.lastName}`)
+      this.namesDictionary.addString(name)
     }
   }
 

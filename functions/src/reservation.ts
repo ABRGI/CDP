@@ -54,6 +54,14 @@ export type Reservation = {
   hotel: string                     // 'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'
 }
 
+export type MinimalReservation = {
+  checkIn: string,       // '2020-09-12 13:00:00'
+  checkOut: string,      // '2020-09-13 09:00:00'
+  hotel: string,
+  state: string,
+  marketingPermission: boolean
+}
+
 const reservationInt = new Set([
   "id", "version", "reservationCode", "hotelId", "type",
 ])
@@ -74,7 +82,11 @@ export const mapReservationValue = (props: { header: string, value: string }): b
     return
   }
   if (props.header === 'reservationExtraInfo') {
-    return JSON.parse(value)
+    try {
+      return JSON.parse(value)
+    } catch (_) {
+      return {}
+    }
   }
   if (reservationInt.has(props.header)) {
     return parseInt(value, 10)

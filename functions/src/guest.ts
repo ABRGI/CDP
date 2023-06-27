@@ -129,7 +129,7 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
     return c
   }
 
-  const { weekendDays, weekDays, totalDays } = calculateDaysBetween(r.checkIn, r.checkOut)
+  const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
   return {
     ...c,
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,

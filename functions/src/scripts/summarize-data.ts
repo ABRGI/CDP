@@ -29,15 +29,11 @@ const summarizeData = async (reservationFilename: string, guestFilename: string)
     }
   }, mapReservationValue)
 
-  const rawGuests = await loadCsv<Guest>(guestFilename, mapGuestValue)
-  const guests = rawGuests.sort((a, b) => b.reservationId - a.reservationId)
+  console.log("Starting guests...")
   let nonCustomerGuests = 0
   let customerGuests = 0
-
-  console.log("Starting guests...")
-
   handled = 0
-  for (const g of guests) {
+  await streamCsv<Guest>(guestFilename, (g: Guest) => {
     if (!g.email && !g.mobile && !g.ssn) {
       nonCustomerGuests++
     } else {
@@ -46,9 +42,9 @@ const summarizeData = async (reservationFilename: string, guestFilename: string)
     handled++
     merger.addGuest(g)
     if ((handled % 100000) === 0) {
-      console.log(`Handled ${Math.round(handled * 100 / guests.length)}% of guests`)
+      console.log(`Handled ${Math.round(handled * 100 / 1000000)}% of guests`)
     }
-  }
+  }, mapGuestValue)
 
   console.log(`Identified reservation customers: ${identifiedReservationCustomers}, unidentified reservation: ${nonReservationCustomers}`)
   console.log(`Identified guest customers: ${customerGuests}, unidentified guests: ${nonCustomerGuests}`)

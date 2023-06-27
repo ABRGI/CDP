@@ -54,8 +54,9 @@ export class CustomerMerger {
   addGuest(g: Guest) {
     // Handling the guest customer profile, it is only added if such customer does not exist
     const customerId = this.getExistingCustomer(g.ssn, g.email, g.mobile)
-    if (!customerId) {
-      const customer = createCustomerFromGuest(this.reservations[g.reservationId], g)
+    const r = this.reservations[g.reservationId]
+    if (!customerId && r) {
+      const customer = createCustomerFromGuest(r, g)
       if (customer) {
         this.addCustomerToIndices(customer)
       }

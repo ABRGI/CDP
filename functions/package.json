@@ -8,7 +8,8 @@
     "start-new-reservation-hook": "functions-framework --target=NewReservationHook --port=9000",
     "prestart": "npm run build",
     "gcp-build": "npm run build",
-    "test": "jest --coverage ./src"
+    "test": "jest --coverage ./src",
+    "test-dictionary": "jest --coverage ./src/dictionary.test.ts"
   },
   "keywords": [],
   "author": "Mika hirvikorpi",

@@ -12,8 +12,8 @@ export type Reservation = {
   lang: string,                   // 'en', 'fi', 'ru', 'sv', 'et'
   totalPaid: number,
   currency: string,               // EUR (only)
-  customerFirstName: string,
-  customerLastName: string,
+  customerFirstName?: string,
+  customerLastName?: string,
   customerMobile?: string,         // '', '+3585089712389123', may contain whitespaces
   customerAddress?: string,        // '', 'Tietie 12'
   customerPostalCode?: string,     // '', '00100', may contain also '00100 Helsinki'
@@ -54,6 +54,14 @@ export type Reservation = {
   hotel: string                     // 'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'
 }
 
+export type MinimalReservation = {
+  checkIn: string,       // '2020-09-12 13:00:00'
+  checkOut: string,      // '2020-09-13 09:00:00'
+  hotel: string,
+  state: string,
+  marketingPermission: boolean
+}
+
 const reservationInt = new Set([
   "id", "version", "reservationCode", "hotelId", "type",
 ])
@@ -74,7 +82,11 @@ export const mapReservationValue = (props: { header: string, value: string }): b
     return
   }
   if (props.header === 'reservationExtraInfo') {
-    return JSON.parse(value)
+    try {
+      return JSON.parse(value)
+    } catch (_) {
+      return {}
+    }
   }
   if (reservationInt.has(props.header)) {
     return parseInt(value, 10)
@@ -111,6 +123,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       id: `R-${r.id}`,
       ssn: r.customerSsn,
       email: r.customerEmailReal,
+      firstName: r.customerFirstName,
+      lastName: r.customerLastName,
       phoneNumber: r.customerMobile,
       dateOfBirth: r.customerDateOfBirth,
       isoCountryCode: r.customerIsoCountryCode,
@@ -181,6 +195,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
   return {
     ...c,
     email: nc.email || c.email,
+    firstName: nc.firstName || c.firstName,
+    lastName: nc.lastName || c.lastName,
     phoneNumber: nc.phoneNumber || c.phoneNumber,
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
     isoCountryCode: c.isoCountryCode || nc.dateOfBirth,

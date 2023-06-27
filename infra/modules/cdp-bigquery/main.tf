@@ -456,6 +456,18 @@ resource "google_bigquery_table" "customers_table" {
         "description" : "Email"
       },
       {
+        "name" : "firstName",
+        "type" : "STRING",
+        "mode" : "NULLABLE",
+        "description" : "First name of customer"
+      },
+      {
+        "name" : "lastName",
+        "type" : "STRING",
+        "mode" : "NULLABLE",
+        "description" : "Last name of customer"
+      },
+      {
         "name" : "phoneNumber",
         "type" : "STRING",
         "mode" : "NULLABLE",

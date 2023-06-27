@@ -2,40 +2,38 @@ import dayjs from "dayjs"
 import { Guest, mapGuestValue } from "../guest"
 import { CustomerMerger } from "../merge"
 import { Reservation, mapReservationValue } from "../reservation"
-import { loadCsv } from "../utils"
+import { loadCsv, streamCsv } from "../utils"
 
 
 const summarizeData = async (reservationFilename: string, guestFilename: string): Promise<void> => {
-  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue)
-  const reservations = rawReservations.filter(a => dayjs(a.checkIn).isValid()).sort((a, b) => b.id - a.id)
   const merger = new CustomerMerger()
 
   console.log("Starting reservations...")
   let nonReservationCustomers = 0
   let identifiedReservationCustomers = 0
   let handled = 0
-  for (const r of reservations) {
+  let time = new Date().getTime()
+
+  await streamCsv<Reservation>(reservationFilename, (r: Reservation) => {
     if (!r.customerEmailReal && !r.customerMobile && !r.customerSsn) {
       nonReservationCustomers++
     } else {
       identifiedReservationCustomers++
     }
-    merger.addReservation(r)
-    handled++
-    if ((handled % 100000) === 0) {
-      console.log(`Handled ${Math.round(handled * 100 / reservations.length)}% of reservations`)
+    if (dayjs(r.checkIn).isValid() && r.customerEmailReal?.indexOf("@") !== -1) {
+      merger.addReservation(r)
+      handled++
+      if ((handled % 10000) === 0) {
+        console.log(`Handled ${Math.round(handled * 100 / 1000000)}% of reservations in seconds ${(new Date().getTime() - time) / 1000.0}`)
+      }
     }
-  }
-
-  const rawGuests = await loadCsv<Guest>(guestFilename, mapGuestValue)
-  const guests = rawGuests.sort((a, b) => b.reservationId - a.reservationId)
-  let nonCustomerGuests = 0
-  let customerGuests = 0
+  }, mapReservationValue)
 
   console.log("Starting guests...")
-
+  let nonCustomerGuests = 0
+  let customerGuests = 0
   handled = 0
-  for (const g of guests) {
+  await streamCsv<Guest>(guestFilename, (g: Guest) => {
     if (!g.email && !g.mobile && !g.ssn) {
       nonCustomerGuests++
     } else {
@@ -44,9 +42,9 @@ const summarizeData = async (reservationFilename: string, guestFilename: string)
     handled++
     merger.addGuest(g)
     if ((handled % 100000) === 0) {
-      console.log(`Handled ${Math.round(handled * 100 / reservations.length)}% of guests`)
+      console.log(`Handled ${Math.round(handled * 100 / 1000000)}% of guests`)
     }
-  }
+  }, mapGuestValue)
 
   console.log(`Identified reservation customers: ${identifiedReservationCustomers}, unidentified reservation: ${nonReservationCustomers}`)
   console.log(`Identified guest customers: ${customerGuests}, unidentified guests: ${nonCustomerGuests}`)

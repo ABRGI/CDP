@@ -50,7 +50,7 @@ export class TreeDictionary {
 
   findMatchesInternal(str: string, index: number, currDistance: number, maxDistance: number, tree: Map<number, any>) {
     const val = tree.get(1)
-    if (val && Math.abs(str.length - val.length) < maxDistance && !distanceMoreThan(str, val, maxDistance)) {
+    if (val && Math.abs(str.length - val.length) <= maxDistance && !distanceMoreThan(str, val, maxDistance)) {
       this.matches.add(val)
     }
     for (let ch of tree.keys()) {

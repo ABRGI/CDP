@@ -10,20 +10,22 @@ export class TreeDictionary {
   matches: string[] = []
 
   constructor() {
-    this.tree = {}
+    this.tree = new Map<number, any>()
   }
 
-  addStringInternal(str: string, index: number, tree: any) {
+  addStringInternal(str: string, index: number, tree: Map<number, any>) {
     if (index >= str.length) {
       return
     }
-    const ch = str[index]
-    if (!tree[ch]) {
-      tree[ch] = index === str.length - 1 ? { val: str } : {}
-      this.addStringInternal(str, index + 1, tree[ch])
+    const ch = str.charCodeAt(index)
+    if (!tree.has(ch)) {
+      let next = new Map<number, any>()
+      tree.set(ch, next)
+      if (index === str.length - 1) next.set(1, str)
+      this.addStringInternal(str, index + 1, next)
     }
     else
-      this.addStringInternal(str, index + 1, tree[ch])
+      this.addStringInternal(str, index + 1, tree.get(ch))
   }
 
   addString(str: string) {
@@ -36,20 +38,20 @@ export class TreeDictionary {
     return this.matches
   }
 
-  findMatchesInternal(str: string, index: number, currDistance: number, maxDistance: number, tree: any) {
-    if (tree.val && index === str.length) {
-      this.matches.push(tree.val)
+  findMatchesInternal(str: string, index: number, currDistance: number, maxDistance: number, tree: Map<number, any>) {
+    if (tree.has(1) && index === str.length) {
+      this.matches.push(tree.get(1))
     }
 
-    for (let ch of Object.keys(tree)) {
-      if (ch !== 'val') {
-        if (index < str.length && ch === str[index]) {
-          this.findMatchesInternal(str, index + 1, currDistance, maxDistance, tree[ch])
+    for (let ch of tree.keys()) {
+      if (ch !== 1) {
+        if (index < str.length && ch === str.charCodeAt(index)) {
+          this.findMatchesInternal(str, index + 1, currDistance, maxDistance, tree.get(ch))
         }
         else if (currDistance + 1 <= maxDistance) {
           this.findMatchesInternal(str, index + 1, currDistance + 1, maxDistance, tree)
-          this.findMatchesInternal(str, index + 1, currDistance + 1, maxDistance, tree[ch])
-          this.findMatchesInternal(str, index, currDistance + 1, maxDistance, tree[ch])
+          this.findMatchesInternal(str, index + 1, currDistance + 1, maxDistance, tree.get(ch))
+          this.findMatchesInternal(str, index, currDistance + 1, maxDistance, tree.get(ch))
         }
       }
     }

@@ -1,5 +1,9 @@
 import { http, Request, Response } from '@google-cloud/functions-framework';
 import { JSONSchema7, validate } from 'json-schema'
+import { PubSub } from '@google-cloud/pubsub'
+import { googleProjectId, reservationTopicId } from './env';
+
+const pubsub = new PubSub({ projectId: googleProjectId })
 
 const NewReservationsSchema: JSONSchema7 = {
   type: "array",
@@ -28,7 +32,7 @@ type NewReservation = {
 /**
  * Cloud function which receives information about the new reservations
  */
-http('NewReservationHook', (req: Request, res: Response) => {
+http('NewReservationHook', async (req: Request, res: Response) => {
   if (!req.rawBody) {
     res.status(400).send({ message: "Missing body" }).end()
   } else {
@@ -37,6 +41,7 @@ http('NewReservationHook', (req: Request, res: Response) => {
     if (validationResult.valid === false) {
       res.status(400).send({ message: "Invalid body", errors: validationResult.errors })
     } else {
+      await pubsub.topic(reservationTopicId).publishMessage({ json: reservations })
       res.status(200).end()
     }
   }

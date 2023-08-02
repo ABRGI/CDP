@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start-new-reservation-hook": "functions-framework --target=NewReservationHook --port=9000",
+    "test-new-reservation-hook": "export GCP_PROJECT_ID=omena-cdp-kiva-testing; export GCP_RESERVATION_TOPIC_ID=nelson-reservations; functions-framework --target=NewReservationHook --port=9000",
     "prestart": "npm run build",
     "gcp-build": "npm run build",
     "test": "jest --coverage ./src",
@@ -30,6 +30,7 @@
   "dependencies": {
     "@google-cloud/bigquery": "^6.2.0",
     "@google-cloud/functions-framework": "^3.2.0",
+    "@google-cloud/pubsub": "^3.7.3",
     "crypto": "^1.0.1",
     "csv-parser": "^3.0.0",
     "dayjs": "^1.11.8",

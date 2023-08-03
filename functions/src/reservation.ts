@@ -55,6 +55,7 @@ export type Reservation = {
 }
 
 export type MinimalReservation = {
+  id: number,
   checkIn: string,       // '2020-09-12 13:00:00'
   checkOut: string,      // '2020-09-13 09:00:00'
   hotel: string,
@@ -165,7 +166,9 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       totalHotelBookingCounts: [{ hotel: r.hotel, count: 1 }],
 
-      marketingPermission: r.marketingPermission
+      marketingPermission: r.marketingPermission,
+
+      reservationIds: [r.id]
     }
   }
 }
@@ -238,6 +241,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     totalHotelBookingCounts: mergeHotelCounts(c.totalHotelBookingCounts, nc.totalHotelBookingCounts),
 
-    marketingPermission: nc.marketingPermission
+    marketingPermission: nc.marketingPermission,
+
+    reservationIds: [...c.reservationIds, ...nc.reservationIds]
   }
 }

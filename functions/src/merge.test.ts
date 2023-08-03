@@ -286,6 +286,7 @@ describe('Merge tests', () => {
     expect(customer.totalWeekendDays).toBe(0)
     expect(customer.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 1 }])
     expect(customer.marketingPermission).toBe(true)
+    expect(customer.reservationIds).toEqual([r1.id, r2.id])
 
     const r3 = generateNewReservation()
     r3.customerSsn = r2.customerSsn
@@ -324,5 +325,6 @@ describe('Merge tests', () => {
     expect(customerUpd.totalLeisureBookings).toBe(2)
     expect(customerUpd.totalBusinessBookings).toBe(1)
     expect(customerUpd.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 2 }])
+    expect(customerUpd.reservationIds).toEqual([r1.id, r2.id, r3.id])
   })
 });

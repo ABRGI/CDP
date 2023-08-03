@@ -27,6 +27,7 @@ export class CustomerMerger {
    */
   addReservation(r: Reservation) {
     this.reservations[r.id] = {
+      id: r.id,
       checkIn: r.checkIn,
       checkOut: r.checkOut,
       hotel: r.hotel,

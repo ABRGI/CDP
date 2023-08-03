@@ -687,6 +687,12 @@ resource "google_bigquery_table" "customers_table" {
         "type" : "BOOL",
         "mode" : "REQUIRED",
         "description" : "Permission to send marketing messages"
+      },
+      {
+        "name" : "reservationIds",
+        "mode" : "REPEATED",
+        "type" : "INT64",
+        "description" : "Ids of the customer reservations"
       }
   ])
 }

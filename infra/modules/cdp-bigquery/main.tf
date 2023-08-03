@@ -690,3 +690,37 @@ resource "google_bigquery_table" "customers_table" {
       }
   ])
 }
+
+resource "google_storage_bucket" "javascript_bucket" {
+  project  = var.project_id
+  name     = "${var.project_id}-bigquery-functions"
+  location = "EU"
+}
+
+resource "google_storage_bucket_object" "udf_bigquery_object" {
+  name   = "bigquery.js"
+  source = "${path.module}/bigquery.js"
+  bucket = google_storage_bucket.javascript_bucket.name
+}
+
+resource "google_bigquery_routine" "levenshtein_distance_routine" {
+  project            = var.project_id
+  dataset_id         = google_bigquery_dataset.cdp_dataset.dataset_id
+  routine_id         = "levenshtein_distance_routine"
+  routine_type       = "SCALAR_FUNCTION"
+  language           = "JAVASCRIPT"
+  imported_libraries = ["gs://${google_storage_bucket.javascript_bucket.name}/bigquery.js"]
+  definition_body    = "return levenshteinDistance(s1, s2)"
+  determinism_level  = "DETERMINISTIC"
+
+  arguments {
+    name      = "s1"
+    data_type = "{\"typeKind\" : \"STRING\"}"
+  }
+  arguments {
+    name      = "s2"
+    data_type = "{\"typeKind\" : \"STRING\"}"
+  }
+
+  return_type = "{\"typeKind\" : \"NUMERIC\"}"
+}

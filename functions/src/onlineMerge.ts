@@ -4,12 +4,17 @@ import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustome
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 
 
+export type MergingStatus = {
+
+}
+
+
 /**
  * Online merging of customer profiles based on incoming reservations
  */
 export class OnlineMerger {
-  bigQuery: BigQuerySimple
-  datasetId: string
+  protected bigQuery: BigQuerySimple
+  protected datasetId: string
 
   constructor(projectId: string, datasetId: string) {
     this.bigQuery = new BigQuerySimple(projectId)
@@ -20,27 +25,32 @@ export class OnlineMerger {
    * Add reservation information to the customer profiles or creates a new one
    * @param r Reservation to add
    */
-  async addReservation(r: Reservation, guests: Guest[]) {
+  protected async addReservation(r: Reservation, guests: Guest[]) {
     let customer = await this.findExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
       r.customerFirstName, r.customerLastName)
     if (customer) {
       await this.removeCustomer(customer.id)
+      customer = mergeReservationToCustomer(customer, r)
     } else {
       customer = createCustomerFromReservation(r)
     }
     if (customer) {
       for (const g of guests) {
-        customer = mergeGuestToCustomer(customer, r, g)
+        customer = addGuestToCustomer(customer, g)
       }
       await this.createCustomer(customer)
     }
     for (const g of guests) {
-      const customer = await this.findExistingCustomer(g.ssn, g.email, g.mobile)
+      customer = await this.findExistingCustomer(g.ssn, g.email, g.mobile)
       if (!customer) {
         const customer = createCustomerFromGuest(r, g)
         if (customer) {
           await this.createCustomer(customer)
         }
+      } else {
+        await this.removeCustomer(customer.id)
+        customer = mergeGuestToCustomer(customer, r, g)
+        await this.createCustomer(customer)
       }
     }
   }
@@ -95,7 +105,7 @@ export class OnlineMerger {
    * Creates customer to BigQuery
    * @param customer Customer to create
    */
-  async createCustomer(customer: Customer) {
+  protected async createCustomer(customer: Customer) {
     await this.bigQuery.insertOne(this.datasetId, "customers", customer)
   }
 
@@ -103,7 +113,7 @@ export class OnlineMerger {
    * Removes customer from BigQuery
    * @param customerId Id of the custoemr remove
    */
-  async removeCustomer(customerId: string) {
+  protected async removeCustomer(customerId: string) {
     await this.bigQuery.delete(this.datasetId, `DELETE FROM customers WHERE id='${customerId}`)
   }
 
@@ -112,7 +122,7 @@ export class OnlineMerger {
    * @param ssn SSN to search for
    * @returns
    */
-  async findCustomerWithSsn(ssn: string): Promise<Customer | undefined> {
+  protected async findCustomerWithSsn(ssn: string): Promise<Customer | undefined> {
     return await this.bigQuery.queryOne(this.datasetId, `SELECT * FROM customers WHERE ssn=${ssn}`) as Customer
   }
 
@@ -121,7 +131,7 @@ export class OnlineMerger {
    * @param email Email to search for
    * @param maxDistance Maximum Levenshtein distance of email addresses
    */
-  async findCustomerWithEmail(email: string, maxDistance: number): Promise<Customer[]> {
+  protected async findCustomerWithEmail(email: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
           WHERE levenshtein_distance_routine(email, '${email}') <= ${maxDistance} AND email IS NOT NULL
@@ -133,7 +143,7 @@ export class OnlineMerger {
    * @param phoneNumber Phone number to search for
    * @param maxDistance Maximum Levenshtein distance of phone numbers
    */
-  async findCustomerWithPhoneNumber(phoneNumber: string, maxDistance: number): Promise<Customer[]> {
+  protected async findCustomerWithPhoneNumber(phoneNumber: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
           WHERE levenshtein_distance_routine(phoneNumber, '${phoneNumber}') <= ${maxDistance} AND phoneNumber IS NOT NULL
@@ -145,7 +155,7 @@ export class OnlineMerger {
    * @param name Name to search for (first + last)
    * @param maxDistance Maximum Levenshtein distance of names
    */
-  async findCustomerWithName(name: string, maxDistance: number): Promise<Customer[]> {
+  protected async findCustomerWithName(name: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
           WHERE levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}') <= ${maxDistance} AND
@@ -157,7 +167,7 @@ export class OnlineMerger {
    * Search for reservation
    * @param reservationId Id of the reservation to search for
    */
-  async findReservation(reservationId: number): Promise<Reservation | undefined> {
+  protected async findReservation(reservationId: number): Promise<Reservation | undefined> {
     return await this.bigQuery.queryOne<Reservation>(this.datasetId,
       `SELECT * FROM reservations WHERE id=${reservationId}`)
   }
@@ -166,7 +176,7 @@ export class OnlineMerger {
    * Searches for customer based on reservation ID
    * @param reservationId Reservation ID user for searching
    */
-  async findCustomerByReservationId(reservationId: number): Promise<Customer | undefined> {
+  protected async findCustomerByReservationId(reservationId: number): Promise<Customer | undefined> {
     return await this.bigQuery.queryOne<Reservation>(this.datasetId,
       `SELECT * FROM customers WHERE ${reservationId} IN reservationIds`)
   }

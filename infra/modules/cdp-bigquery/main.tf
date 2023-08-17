@@ -51,7 +51,7 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "totalPaid",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Total amount paid"
       },
@@ -517,7 +517,7 @@ resource "google_bigquery_table" "customers_table" {
       },
       {
         "name" : "lifetimeSpend",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Total amount of money spend in EUR"
       },
@@ -536,36 +536,36 @@ resource "google_bigquery_table" "customers_table" {
       {
         "name" : "bookingLeadTimesDays",
         "mode" : "REPEATED",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "description" : "Lead time in bookings"
       },
       {
         "name" : "avgBookingsPerYear",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average of bookings per year"
       },
       {
         "name" : "avgBookingFrequencyDays",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average days between bookings"
       },
       {
         "name" : "avgNightsPerBooking",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average nights per booking"
       },
       {
         "name" : "avgPeoplePerBooking",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average people per booking"
       },
       {
         "name" : "avgLeadTimeDays",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average lead time of bookings"
       },
@@ -728,5 +728,5 @@ resource "google_bigquery_routine" "levenshtein_distance_routine" {
     data_type = "{\"typeKind\" : \"STRING\"}"
   }
 
-  return_type = "{\"typeKind\" : \"NUMERIC\"}"
+  return_type = "{\"typeKind\" : \"FLOAT64\"}"
 }

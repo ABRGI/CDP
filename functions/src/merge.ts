@@ -78,6 +78,24 @@ export class CustomerMerger {
    * @param ssn Social Security Number
    * @param email email
    * @param phoneNumber phone number
+   * @param firstName first name
+   * @param lastName last name
+   * @returns customer ID if one is found, undefined otherwise
+   */
+  findExistingCustomer(ssn?: string, email?: string, phoneNumber?: string, firstName?: string, lastName?: string): Customer | undefined {
+    const id = this.getExistingCustomer(ssn, email, phoneNumber, firstName, lastName)
+    if (id) {
+      return this.customers[id]
+    }
+  }
+
+  /**
+   * Check if there is customer with any of the given parameters
+   * @param ssn Social Security Number
+   * @param email email
+   * @param phoneNumber phone number
+   * @param firstName first name
+   * @param lastName last name
    * @returns customer ID if one is found, undefined otherwise
    */
   getExistingCustomer(ssn?: string, email?: string, phoneNumber?: string, firstName?: string, lastName?: string): string | undefined {
@@ -132,7 +150,7 @@ export class CustomerMerger {
    * Adds customer to the indices
    * @param customer Customer to add
    */
-  private addCustomerToIndices(customer: Customer): void {
+  addCustomerToIndices(customer: Customer): void {
     this.customers[customer.id] = customer
     if (customer.ssn) {
       this.ssnIds[customer.ssn] = customer.id

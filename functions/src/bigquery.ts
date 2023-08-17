@@ -47,7 +47,10 @@ export class BigQuerySimple {
     const rows = await this.bigquery.dataset(dateSetId).query({
       query
     })
-    return rows[0] as Array<T>
+    const mapped = rows[0].map((r: any) => {
+      return this.mapRow(r)
+    })
+    return mapped as Array<T>
   }
 
   /**
@@ -70,6 +73,24 @@ export class BigQuerySimple {
    */
   async delete(datasetId: string, query: string): Promise<void> {
     await this.bigquery.dataset(datasetId).query({ query })
+  }
+
+  /**
+   * Maps bigquery values to strings, numbers, etc.
+   * @param r
+   * @returns
+   */
+  protected mapRow(r: any): any {
+    const mapped: any = {}
+    for (const key of Object.keys(r)) {
+
+      if (r[key] && r[key].value) {
+        mapped[key] = r[key].value
+      } else {
+        mapped[key] = r[key]
+      }
+    }
+    return mapped
   }
 }
 

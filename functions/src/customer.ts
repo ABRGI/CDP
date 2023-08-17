@@ -52,6 +52,8 @@ export type Customer = {
   totalHotelBookingCounts: { hotel: string, count: number }[]
 
   marketingPermission: boolean
+
+  reservationIds: number[]
 }
 
 /**

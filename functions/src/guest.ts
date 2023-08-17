@@ -1,8 +1,7 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { MinimalReservation, Reservation } from "./reservation"
-import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
-import { mergeHotelCounts } from "./hotel"
+import { RoundToTwo, calculateDaysBetween } from "./utils"
 
 export type Guest = {
   id: number,
@@ -110,7 +109,9 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       totalHotelBookingCounts: [],
 
-      marketingPermission: r.marketingPermission
+      marketingPermission: r.marketingPermission,
+
+      reservationIds: [r.id]
     }
   }
   return
@@ -148,7 +149,9 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
     totalWeekDays: weekDays,
     totalWeekendDays: weekendDays,
 
-    marketingPermission: nc.marketingPermission
+    marketingPermission: nc.marketingPermission,
+
+    reservationIds: [...c.reservationIds, r.id]
   }
 }
 

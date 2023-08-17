@@ -51,7 +51,7 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "totalPaid",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Total amount paid"
       },
@@ -517,7 +517,7 @@ resource "google_bigquery_table" "customers_table" {
       },
       {
         "name" : "lifetimeSpend",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Total amount of money spend in EUR"
       },
@@ -536,36 +536,36 @@ resource "google_bigquery_table" "customers_table" {
       {
         "name" : "bookingLeadTimesDays",
         "mode" : "REPEATED",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "description" : "Lead time in bookings"
       },
       {
         "name" : "avgBookingsPerYear",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average of bookings per year"
       },
       {
         "name" : "avgBookingFrequencyDays",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average days between bookings"
       },
       {
         "name" : "avgNightsPerBooking",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average nights per booking"
       },
       {
         "name" : "avgPeoplePerBooking",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average people per booking"
       },
       {
         "name" : "avgLeadTimeDays",
-        "type" : "NUMERIC",
+        "type" : "FLOAT64",
         "mode" : "REQUIRED",
         "description" : "Average lead time of bookings"
       },
@@ -687,6 +687,46 @@ resource "google_bigquery_table" "customers_table" {
         "type" : "BOOL",
         "mode" : "REQUIRED",
         "description" : "Permission to send marketing messages"
+      },
+      {
+        "name" : "reservationIds",
+        "mode" : "REPEATED",
+        "type" : "INT64",
+        "description" : "Ids of the customer reservations"
       }
   ])
+}
+
+resource "google_storage_bucket" "javascript_bucket" {
+  project  = var.project_id
+  name     = "${var.project_id}-bigquery-functions"
+  location = "EU"
+}
+
+resource "google_storage_bucket_object" "udf_bigquery_object" {
+  name   = "bigquery.js"
+  source = "${path.module}/bigquery.js"
+  bucket = google_storage_bucket.javascript_bucket.name
+}
+
+resource "google_bigquery_routine" "levenshtein_distance_routine" {
+  project            = var.project_id
+  dataset_id         = google_bigquery_dataset.cdp_dataset.dataset_id
+  routine_id         = "levenshtein_distance_routine"
+  routine_type       = "SCALAR_FUNCTION"
+  language           = "JAVASCRIPT"
+  imported_libraries = ["gs://${google_storage_bucket.javascript_bucket.name}/bigquery.js"]
+  definition_body    = "return levenshteinDistance(s1, s2)"
+  determinism_level  = "DETERMINISTIC"
+
+  arguments {
+    name      = "s1"
+    data_type = "{\"typeKind\" : \"STRING\"}"
+  }
+  arguments {
+    name      = "s2"
+    data_type = "{\"typeKind\" : \"STRING\"}"
+  }
+
+  return_type = "{\"typeKind\" : \"FLOAT64\"}"
 }

@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
+import { RoundToTwo, calculateDaysBetween } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 
 export type Reservation = {

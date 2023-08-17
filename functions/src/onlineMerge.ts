@@ -36,9 +36,8 @@ export class OnlineMerger {
     }
     for (const g of guests) {
       const customer = await this.findExistingCustomer(g.ssn, g.email, g.mobile)
-      const reservation = await this.findReservation(g.reservationId)
-      if (!customer && reservation) {
-        const customer = createCustomerFromGuest(reservation, g)
+      if (!customer) {
+        const customer = createCustomerFromGuest(r, g)
         if (customer) {
           await this.createCustomer(customer)
         }

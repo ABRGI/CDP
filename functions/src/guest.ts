@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { MinimalReservation, Reservation } from "./reservation"
+import { MinimalReservation } from "./reservation"
 import { RoundToTwo, calculateDaysBetween } from "./utils"
 
 export type Guest = {
@@ -124,7 +124,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
  * @param g Guest information
  * @returns
  */
-export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Customer => {
+export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Guest): Customer => {
   const nc = createCustomerFromGuest(r, g)
   if (!nc) {
     return c

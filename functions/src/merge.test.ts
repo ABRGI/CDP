@@ -215,6 +215,7 @@ describe('Merge tests', () => {
     const customer = merger.getCustomers()[0]
 
     const guest = generateNewGuest(reservation.id)
+    guest.guestIndex = 0
     guest.ssn = reservation.customerSsn
     guest.firstName = undefined
     guest.lastName = undefined

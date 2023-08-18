@@ -61,6 +61,9 @@ export class CustomerMerger {
       if (customer) {
         this.addCustomerToIndices(customer)
       }
+    } else if (customerId && g.guestIndex > 0) {
+      const customer = this.customers[customerId]
+      this.customers[customerId] = mergeGuestToCustomer(customer, r, g)
     }
 
     // Add the guest information to the booking customer

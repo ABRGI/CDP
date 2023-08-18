@@ -54,7 +54,7 @@ export type Customer = {
 
   marketingPermission: boolean
 
-  profileIds: { id: number, type: 'Reservation' | 'Guest' }[]
+  profileIds: { id: number, type: 'Reservation' | 'Guest' | 'ReservationGuest' }[]
 }
 
 /**
@@ -83,4 +83,35 @@ export const calculateCustomerMatchPoints = (customer: Customer, ssn?: string, e
     total += distanceMoreThan(`${customer.firstName} ${customer.lastName}`, `${firstName} ${lastName}`, 1) ? -1 : 1
   }
   return total
+}
+
+
+/**
+ * Returns true if customer has given reservation
+ * @param customer Customer to search for
+ * @param reservationId Reservation ID to check
+ * @returns
+ */
+export const hasCustomerReservation = (customer: Customer, reservationId: number): boolean => {
+  return customer.profileIds.find(pid => pid.id === reservationId && pid.type === "Reservation") !== undefined
+}
+
+/**
+ * Returns true if customer has given guest
+ * @param customer Customer to search for
+ * @param guestId Guest ID to check
+ * @returns
+ */
+export const hasCustomerGuest = (customer: Customer, guestId: number): boolean => {
+  return customer.profileIds.find(pid => pid.id === guestId && pid.type === "Guest") !== undefined
+}
+
+/**
+ * Returns true if customer has given guest in some reservation
+ * @param customer Customer to search for
+ * @param guestId Guest ID to check
+ * @returns
+ */
+export const hasCustomerReservationGuest = (customer: Customer, guestId: number): boolean => {
+  return customer.profileIds.find(pid => pid.id === guestId && pid.type === "ReservationGuest") !== undefined
 }

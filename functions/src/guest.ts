@@ -169,5 +169,6 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
     includesChildren: c.includesChildren || dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
     bookingPeopleCounts,
     avgPeoplePerBooking: RoundToTwo(c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length),
+    profileIds: [...c.profileIds, { id: g.id, type: "ReservationGuest" }]
   }
 }

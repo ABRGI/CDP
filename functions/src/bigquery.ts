@@ -59,7 +59,7 @@ export class BigQuerySimple {
    * @param query SQL query string
    * @returns
    */
-  async queryOne<T>(dateSetId: string, query: string): Promise<any> {
+  async queryOne<T>(dateSetId: string, query: string): Promise<T> {
     const rows = await this.bigquery.dataset(dateSetId).query({
       query
     })

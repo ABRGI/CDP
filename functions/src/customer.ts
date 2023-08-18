@@ -43,6 +43,7 @@ export type Customer = {
   totalBookingsAsGuest: number
   totalBookings: number
   totalBookingCancellations: number
+  totalBookingsPending: number
 
   blocked: boolean
 
@@ -53,7 +54,7 @@ export type Customer = {
 
   marketingPermission: boolean
 
-  reservationIds: number[]
+  profileIds: { id: number, type: 'Reservation' | 'Guest' }[]
 }
 
 /**

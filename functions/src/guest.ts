@@ -101,6 +101,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       totalBookingsAsGuest: 1,
       totalBookings: 0,
       totalBookingCancellations: 0,
+      totalBookingsPending: 0,
 
       blocked: r.state === "BLOCKED",
 
@@ -111,7 +112,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       marketingPermission: r.marketingPermission,
 
-      reservationIds: [r.id]
+      profileIds: [{ id: r.id, type: "Reservation" }]
     }
   }
   return
@@ -151,7 +152,7 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
 
     marketingPermission: nc.marketingPermission,
 
-    reservationIds: [...c.reservationIds, r.id]
+    profileIds: [...c.profileIds, { id: g.id, type: "Guest" }]
   }
 }
 

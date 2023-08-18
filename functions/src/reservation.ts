@@ -159,6 +159,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookingsAsGuest: 0,
       totalBookings: 1,
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
+      totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
       blocked: r.state === "BLOCKED",
 
       totalWeekDays: weekDays,
@@ -168,7 +169,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       marketingPermission: r.marketingPermission,
 
-      reservationIds: [r.id]
+      profileIds: [{ id: r.id, type: "Reservation" }]
     }
   }
 }
@@ -243,6 +244,6 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     marketingPermission: nc.marketingPermission,
 
-    reservationIds: [...c.reservationIds, ...nc.reservationIds]
+    profileIds: [...c.profileIds, ...nc.profileIds]
   }
 }

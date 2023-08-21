@@ -109,7 +109,8 @@ export const generateNewReservation = (): Reservation => {
     breakfastsForAll: false,
     customerIsoCountryCode: "FIN",
     reservationExtraInfo: {},
-    hotel: getRandomFrom(["HKI2", "HKI3", "JYL1", "TRE2", "POR2", "VSA2", "TKU1", "TKU2"])
+    hotel: getRandomFrom(["HKI2", "HKI3", "JYL1", "TRE2", "POR2", "VSA2", "TKU1", "TKU2"]),
+    updated: new Date().getTime()
   }
 }
 

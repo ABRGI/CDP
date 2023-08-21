@@ -52,6 +52,7 @@ export type Reservation = {
   reservationExtraInfo: any,        // JSON
   customerSignatureId?: string,     // '', 'xxxxx.png'
   hotel: string                     // 'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'
+  updated: number                   // Timestamp of latest update
 }
 
 export type MinimalReservation = {
@@ -60,7 +61,8 @@ export type MinimalReservation = {
   checkOut: string,      // '2020-09-13 09:00:00'
   hotel: string,
   state: string,
-  marketingPermission: boolean
+  marketingPermission: boolean,
+  updated: number
 }
 
 const reservationInt = new Set([
@@ -169,7 +171,9 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       marketingPermission: r.marketingPermission,
 
-      profileIds: [{ id: r.id, type: "Reservation" }]
+      profileIds: [{ id: r.id, type: "Reservation" }],
+
+      updated: r.updated
     }
   }
 }
@@ -244,6 +248,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     marketingPermission: nc.marketingPermission,
 
-    profileIds: [...c.profileIds, ...nc.profileIds]
+    profileIds: [...c.profileIds, ...nc.profileIds],
+
+    updated: Math.max(c.updated, nc.updated)
   }
 }

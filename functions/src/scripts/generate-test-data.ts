@@ -59,7 +59,8 @@ const generateReservationRow = (sampleRows: Reservation[]): Reservation => {
     customerIsoCountryCode: sr.customerIsoCountryCode,
     cancellationReason: sr.cancellationReason,
     reservationExtraInfo: {},
-    hotel: sr.hotel
+    hotel: sr.hotel,
+    updated: new Date().getTime()
   }
 }
 

@@ -32,7 +32,8 @@ export class CustomerMerger {
       checkOut: r.checkOut,
       hotel: r.hotel,
       state: r.state,
-      marketingPermission: r.marketingPermission
+      marketingPermission: r.marketingPermission,
+      updated: r.updated
     }
     const customerId = this.getExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
       r.customerFirstName, r.customerLastName)

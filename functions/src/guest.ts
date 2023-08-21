@@ -112,7 +112,9 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       marketingPermission: r.marketingPermission,
 
-      profileIds: [{ id: r.id, type: "Reservation" }]
+      profileIds: [{ id: r.id, type: "Reservation" }],
+
+      updated: r.updated
     }
   }
   return
@@ -152,7 +154,9 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
 
     marketingPermission: nc.marketingPermission,
 
-    profileIds: [...c.profileIds, { id: g.id, type: "Guest" }]
+    profileIds: [...c.profileIds, { id: g.id, type: "Guest" }],
+
+    updated: Math.max(c.updated, r.updated)
   }
 }
 

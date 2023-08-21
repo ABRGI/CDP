@@ -35,11 +35,11 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   process.stdout.write("done.\n")
 
   process.stdout.write("Inserting reservations to BigQuery...")
-  // await bq.insert(datasetId, "reservations", reservations)
+  await bq.insert(datasetId, "reservations", reservations)
   process.stdout.write("done.\n")
 
   process.stdout.write("Inserting guests to BigQuery...")
-  //await bq.insert(datasetId, "guests", guests)
+  await bq.insert(datasetId, "guests", guests)
   process.stdout.write("done.\n")
 
   const customers = merger.getCustomers()

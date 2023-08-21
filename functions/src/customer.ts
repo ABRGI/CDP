@@ -55,6 +55,8 @@ export type Customer = {
   marketingPermission: boolean
 
   profileIds: { id: number, type: 'Reservation' | 'Guest' | 'ReservationGuest' }[]
+
+  updated: number
 }
 
 /**

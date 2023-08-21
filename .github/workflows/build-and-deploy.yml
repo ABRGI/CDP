@@ -3,7 +3,7 @@ run-name: ${{ github.actor }} is build and deploying new version to test
 on:
   push:
     branches:
-      feature/restructure-customer-profile
+      test
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

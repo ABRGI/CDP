@@ -3,11 +3,12 @@ import { JSONSchema7, validate } from 'json-schema'
 import { datasetId, googleProjectId } from './env';
 import { BigQuerySimple } from './bigquery';
 import dayjs from 'dayjs';
-import { generateNewReservation } from './test/utils';
 import { fetchWaitingReservations } from './fetchWaitingReservations';
 import { timestampFormat } from './utils';
+import { OnlineMerger } from './onlineMerge';
 
 const bq = new BigQuerySimple(googleProjectId)
+const onlineMerger = new OnlineMerger(googleProjectId, datasetId, false)
 
 const NewReservationsSchema: JSONSchema7 = {
   type: "array",
@@ -59,6 +60,20 @@ http('NewReservationHook', async (req: Request, res: Response) => {
 http('FetchReservations', async (_: Request, res: Response) => {
   try {
     await fetchWaitingReservations()
+    res.status(200).end()
+  } catch (error) {
+    console.log(JSON.stringify(error))
+    res.status(500).end()
+  }
+});
+
+
+/**
+ * Cloud function which merge new reservations to customer profiles
+ */
+http('MergeNewReservations', async (_: Request, res: Response) => {
+  try {
+    await onlineMerger.mergeNewReservations()
     res.status(200).end()
   } catch (error) {
     console.log(JSON.stringify(error))

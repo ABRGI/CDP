@@ -63,7 +63,10 @@ export class BigQuerySimple {
     const rows = await this.bigquery.dataset(dateSetId).query({
       query
     })
-    return rows[0][0] as T
+    const mapped = rows[0].map((r: any) => {
+      return this.mapRow(r)
+    })
+    return mapped[0] as T
   }
 
   /**

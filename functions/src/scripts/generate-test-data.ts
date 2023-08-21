@@ -44,7 +44,6 @@ const generateReservationRow = (sampleRows: Reservation[]): Reservation => {
     confirmed: leadDate.add(getRandomInt(0, leadDays - 1)).format("YYYY-MM-DD"),
     cancelled: false,
     isFullyRefunded: false,
-    pendingConfirmationSince: "",
     changeType: "",
     state: "CONFIRMED",
     notifyCustomer: false,

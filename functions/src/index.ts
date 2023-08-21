@@ -61,7 +61,6 @@ http('FetchReservations', async (_: Request, res: Response) => {
     await fetchWaitingReservations()
     res.status(200).end()
   } catch (error) {
-    console.log(error)
     console.log(JSON.stringify(error))
     res.status(500).end()
   }

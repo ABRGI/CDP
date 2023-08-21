@@ -3,6 +3,12 @@ import { Customer } from "./customer"
 import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 
+export type WaitingReservation = {
+  id: number
+  guests: number[]
+  updated: string
+}
+
 export type Reservation = {
   id: number,
   version: number

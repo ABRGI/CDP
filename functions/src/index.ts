@@ -1,9 +1,12 @@
 import { http, Request, Response } from '@google-cloud/functions-framework';
 import { JSONSchema7, validate } from 'json-schema'
-import { PubSub } from '@google-cloud/pubsub'
-import { googleProjectId, reservationTopicId } from './env';
+import { datasetId, googleProjectId } from './env';
+import { BigQuerySimple } from './bigquery';
+import dayjs from 'dayjs';
+import { generateNewReservation } from './test/utils';
+import { fetchWaitingReservations } from './fetchWaitingReservations';
 
-const pubsub = new PubSub({ projectId: googleProjectId })
+const bq = new BigQuerySimple(googleProjectId)
 
 const NewReservationsSchema: JSONSchema7 = {
   type: "array",
@@ -41,8 +44,22 @@ http('NewReservationHook', async (req: Request, res: Response) => {
     if (validationResult.valid === false) {
       res.status(400).send({ message: "Invalid body", errors: validationResult.errors })
     } else {
-      await pubsub.topic(reservationTopicId).publishMessage({ json: reservations })
+      const updated = dayjs().format('YYYY-MM-DDTHH:mm:ss.sss')
+      await bq.insert(datasetId, "waitingReservations", reservations.map(r => ({ ...r, updated })))
       res.status(200).end()
     }
+  }
+});
+
+
+/**
+ * Cloud function which checks for waiting reservations and handles them
+ */
+http('FetchReservations', async (_: Request, res: Response) => {
+  try {
+    await fetchWaitingReservations()
+    res.status(200).end()
+  } catch (error) {
+    res.status(500).end()
   }
 });

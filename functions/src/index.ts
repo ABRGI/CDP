@@ -5,6 +5,7 @@ import { BigQuerySimple } from './bigquery';
 import dayjs from 'dayjs';
 import { generateNewReservation } from './test/utils';
 import { fetchWaitingReservations } from './fetchWaitingReservations';
+import { timestampFormat } from './utils';
 
 const bq = new BigQuerySimple(googleProjectId)
 
@@ -44,7 +45,7 @@ http('NewReservationHook', async (req: Request, res: Response) => {
     if (validationResult.valid === false) {
       res.status(400).send({ message: "Invalid body", errors: validationResult.errors })
     } else {
-      const updated = dayjs().format('YYYY-MM-DDTHH:mm:ss.sss')
+      const updated = dayjs().format(timestampFormat)
       await bq.insert(datasetId, "waitingReservations", reservations.map(r => ({ ...r, updated })))
       res.status(200).end()
     }
@@ -60,6 +61,8 @@ http('FetchReservations', async (_: Request, res: Response) => {
     await fetchWaitingReservations()
     res.status(200).end()
   } catch (error) {
+    console.log(error)
+    console.log(JSON.stringify(error))
     res.status(500).end()
   }
 });

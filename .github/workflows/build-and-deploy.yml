@@ -3,7 +3,7 @@ run-name: ${{ github.actor }} is build and deploying new version to test
 on:
   push:
     branches:
-      test
+      feature/restructure-customer-profile
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -31,11 +31,20 @@ jobs:
         with:
           credentials_json: ${{secrets.TEST_GCP_DEPLOYMENT_KEY}}
 
-      - name: Deploy
+      - name: Deploy New Reservation Hook
         uses: 'google-github-actions/deploy-cloud-functions@v1'
         with:
           name: 'NewReservationHook'
           project_id: '${{vars.TEST_GCP_PROJECT_ID}}'
           runtime: 'nodejs16'
           source_dir: ${{env.source-directory}}
-          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_RESERVATION_TOPIC_ID=${{vars.TEST_GCP_TOPIC_NAME}}'
+          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.TEST_GCP_DATASET_ID}}'
+
+      - name: Deploy Fetch Reservations
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'FetchReservations'
+          project_id: '${{vars.TEST_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.TEST_GCP_DATASET_ID}}'

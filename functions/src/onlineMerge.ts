@@ -1,3 +1,4 @@
+import dayjs from "dayjs"
 import { BigQuerySimple } from "./bigquery"
 import { Customer, calculateCustomerMatchPoints, hasCustomerGuest, hasCustomerReservation, hasCustomerReservationGuest } from "./customer"
 import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
@@ -54,13 +55,19 @@ export class OnlineMerger {
       newProfiles: 0,
       updatedProfiles: 0
     }
-    const latest = await this.bigQuery.queryOne<{ reservationId: number }>(this.datasetId, `
-      SELECT MAX(reservationId) as reservationId  FROM customers, UNNEST(reservationIds) as reservationId
+    const latest = await this.bigQuery.queryOne<{ updated: string }>(this.datasetId, `
+      SELECT MAX(updated) as updated  FROM customers
     `)
-    const latestReservationId = latest.reservationId || 0
+    const latestUpdate = dayjs(latest.updated).format('YYYY-MM-DDTHH:mm:ss.SSS') || dayjs().year(1970).format('YYYY-MM-DDTHH:mm:ss.SSS')
 
-    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id>${latestReservationId}`)
-    const newGuests = await this.bigQuery.query<Guest>(this.datasetId, `SELECT * FROM guests WHERE reservationId>${latestReservationId} AND guestIndex > 0`)
+    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}')`)
+    if (!newReservations.length) {
+      return status
+    }
+    const minReservationId = newReservations.reduce((all, curr) => Math.min(all, curr.id), newReservations[0].id)
+    const maxReservationId = newReservations.reduce((all, curr) => Math.max(all, curr.id), newReservations[0].id)
+
+    const newGuests = await this.bigQuery.query<Guest>(this.datasetId, `SELECT * FROM guests WHERE reservationId>=${minReservationId} AND reservationId <= ${maxReservationId} AND guestIndex > 0`)
     for (const reservation of newReservations) {
       const guests = newGuests.filter(g => g.reservationId === reservation.id)
       const addStatus = await this.addReservation(reservation, guests)
@@ -307,6 +314,7 @@ export class OnlineMerger {
   protected async recreateCustomer(customer: Customer): Promise<Customer> {
     const profileIds = customer.profileIds
     let newCustomer: Customer | undefined
+
     for (const pid of profileIds) {
       if (pid.type === "Guest") {
         const guest = await this.bigQuery.queryOne<Guest>(this.datasetId, `SELECT * FROM guests WHERE id=${pid.id}`)

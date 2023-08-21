@@ -56,7 +56,7 @@ export type Customer = {
 
   profileIds: { id: number, type: 'Reservation' | 'Guest' | 'ReservationGuest' }[]
 
-  updated: number
+  updated: string
 }
 
 /**

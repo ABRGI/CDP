@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { MinimalReservation } from "./reservation"
-import { RoundToTwo, calculateDaysBetween } from "./utils"
+import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
 
 export type Guest = {
   id: number,
@@ -156,7 +156,7 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
 
     profileIds: [...c.profileIds, { id: g.id, type: "Guest" }],
 
-    updated: Math.max(c.updated, r.updated)
+    updated: maxTimestamp(c.updated, r.updated)
   }
 }
 

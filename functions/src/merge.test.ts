@@ -240,7 +240,7 @@ describe('Merge tests', () => {
     const customerUpd = merger.getCustomers()[0]
     expect(customerUpd.bookingPeopleCounts).toEqual([2])
     expect(customer.bookingPeopleCounts).toEqual([1])
-    expect({ ...customer, bookingPeopleCounts: [2] }).toEqual(customerUpd)
+    expect({ ...customer, bookingPeopleCounts: [2], profileIds: [...customer.profileIds, { id: guest.id, type: "ReservationGuest" }] }).toEqual(customerUpd)
 
   })
 

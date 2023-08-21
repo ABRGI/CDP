@@ -12,7 +12,7 @@ const testOnlineMerger = async (projectId: string, datasetId: string,
 
   // Load reservations to BigQuery
   process.stdout.write("Loading reservations...")
-  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue)
+  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue, { updated: dayjs().format('YYYY-MM-DDTHH:mm:ss.sss') })
   const reservations = rawReservations.filter(a => dayjs(a.checkIn).isValid()).sort((a, b) => a.id - b.id)
   process.stdout.write("done.\n")
 

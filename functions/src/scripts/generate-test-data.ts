@@ -60,7 +60,7 @@ const generateReservationRow = (sampleRows: Reservation[]): Reservation => {
     cancellationReason: sr.cancellationReason,
     reservationExtraInfo: {},
     hotel: sr.hotel,
-    updated: new Date().getTime()
+    updated: dayjs().format('YYYY-MM-DDTHH:mm:ss.sss')
   }
 }
 
@@ -115,7 +115,7 @@ const generateGuestRow = (customer: Reservation): Guest => {
 
 export const generateTestData = async (sampleFilename: string,
   count: number): Promise<{ reservations: Reservation[], guests: Guest[] }> => {
-  const sampleRows = await loadCsv<Reservation>(sampleFilename, mapReservationValue)
+  const sampleRows = await loadCsv<Reservation>(sampleFilename, mapReservationValue, { updated: new Date().getTime() })
 
   const reservations: Reservation[] = []
   const guests: Guest[] = []

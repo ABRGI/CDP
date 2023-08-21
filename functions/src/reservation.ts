@@ -5,7 +5,7 @@ import { mergeHotelCounts } from "./hotel"
 
 export type WaitingReservation = {
   id: number
-  guests: number[]
+  guestIds: number[]
   updated: string
 }
 

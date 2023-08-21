@@ -22,7 +22,7 @@ export const fetchWaitingReservations = async () => {
       const reservation = generateNewReservation()
       reservation.id = waiting.id
       reservation.updated = waiting.updated
-      const guests = waiting.guests.map(gid => ({ ...generateNewGuest(), id: gid, reservationId: reservation.id }))
+      const guests = waiting.guestIds.map(gid => ({ ...generateNewGuest(), id: gid, reservationId: reservation.id }))
       await bq.insertOne(datasetId, "reservations", reservation)
       await bq.insert(datasetId, "guests", guests)
     }

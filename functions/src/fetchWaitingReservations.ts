@@ -15,7 +15,7 @@ export const fetchWaitingReservations = async () => {
   const latestReservation = await bq.queryOne<{ updated: string }>(datasetId, "SELECT MAX(updated) as updated FROM reservations")
   if (latestReservation) {
     const latestUpdated = dayjs(latestReservation.updated).format(timestampFormat)
-    const waitingReservations = await bq.query<WaitingReservation>(datasetId, `SELECT * FROM waitingReservations WHERE updated>=TIMESTAMP('${latestUpdated}')`)
+    const waitingReservations = await bq.query<WaitingReservation>(datasetId, `SELECT * FROM waitingReservations WHERE updated>TIMESTAMP('${latestUpdated}') ORDER BY updated ASC`)
     console.log(`Found ${waitingReservations.length} waiting reservations`)
     for (const waiting of waitingReservations) {
       // Mock fetching from Nelson

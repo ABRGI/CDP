@@ -1,7 +1,13 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { RoundToTwo, calculateDaysBetween } from "./utils"
+import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
 import { mergeHotelCounts } from "./hotel"
+
+export type WaitingReservation = {
+  id: number
+  guestIds: number[]
+  updated: string
+}
 
 export type Reservation = {
   id: number,
@@ -52,6 +58,7 @@ export type Reservation = {
   reservationExtraInfo: any,        // JSON
   customerSignatureId?: string,     // '', 'xxxxx.png'
   hotel: string                     // 'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'
+  updated: string                   // Timestamp of latest update
 }
 
 export type MinimalReservation = {
@@ -60,7 +67,8 @@ export type MinimalReservation = {
   checkOut: string,      // '2020-09-13 09:00:00'
   hotel: string,
   state: string,
-  marketingPermission: boolean
+  marketingPermission: boolean,
+  updated: string
 }
 
 const reservationInt = new Set([
@@ -159,6 +167,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookingsAsGuest: 0,
       totalBookings: 1,
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
+      totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
       blocked: r.state === "BLOCKED",
 
       totalWeekDays: weekDays,
@@ -168,7 +177,9 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       marketingPermission: r.marketingPermission,
 
-      reservationIds: [r.id]
+      profileIds: [{ id: r.id, type: "Reservation" }],
+
+      updated: r.updated
     }
   }
 }
@@ -243,6 +254,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     marketingPermission: nc.marketingPermission,
 
-    reservationIds: [...c.reservationIds, ...nc.reservationIds]
+    profileIds: [...c.profileIds, ...nc.profileIds],
+
+    updated: maxTimestamp(c.updated, nc.updated)
   }
 }

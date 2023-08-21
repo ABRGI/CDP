@@ -240,7 +240,7 @@ describe('Merge tests', () => {
     const customerUpd = merger.getCustomers()[0]
     expect(customerUpd.bookingPeopleCounts).toEqual([2])
     expect(customer.bookingPeopleCounts).toEqual([1])
-    expect({ ...customer, bookingPeopleCounts: [2] }).toEqual(customerUpd)
+    expect({ ...customer, bookingPeopleCounts: [2], profileIds: [...customer.profileIds, { id: guest.id, type: "ReservationGuest" }] }).toEqual(customerUpd)
 
   })
 
@@ -287,7 +287,7 @@ describe('Merge tests', () => {
     expect(customer.totalWeekendDays).toBe(0)
     expect(customer.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 1 }])
     expect(customer.marketingPermission).toBe(true)
-    expect(customer.reservationIds).toEqual([r1.id, r2.id])
+    expect(customer.profileIds).toEqual([{ id: r1.id, type: "Reservation" }, { id: r2.id, type: "Reservation" }])
 
     const r3 = generateNewReservation()
     r3.customerSsn = r2.customerSsn
@@ -326,6 +326,9 @@ describe('Merge tests', () => {
     expect(customerUpd.totalLeisureBookings).toBe(2)
     expect(customerUpd.totalBusinessBookings).toBe(1)
     expect(customerUpd.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 2 }])
-    expect(customerUpd.reservationIds).toEqual([r1.id, r2.id, r3.id])
+    expect(customerUpd.profileIds).toEqual([
+      { id: r1.id, type: "Reservation" },
+      { id: r2.id, type: "Reservation" },
+      { id: r3.id, type: "Reservation" }])
   })
 });

@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test-new-reservation-hook": "export GCP_PROJECT_ID=omena-cdp-kiva-testing; export GCP_RESERVATION_TOPIC_ID=nelson-reservations; functions-framework --target=NewReservationHook --port=9000",
+    "test-new-reservation-hook": "export GCP_PROJECT_ID=omena-cdp-kiva-testing; export GCP_DATASET_ID=nelson-reservations; functions-framework --target=NewReservationHook --port=9000",
     "prestart": "npm run build",
     "gcp-build": "npm run build",
     "test": "jest --coverage ./src",

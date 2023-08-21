@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { MinimalReservation } from "./reservation"
-import { RoundToTwo, calculateDaysBetween } from "./utils"
+import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
 
 export type Guest = {
   id: number,
@@ -101,6 +101,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       totalBookingsAsGuest: 1,
       totalBookings: 0,
       totalBookingCancellations: 0,
+      totalBookingsPending: 0,
 
       blocked: r.state === "BLOCKED",
 
@@ -111,7 +112,9 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       marketingPermission: r.marketingPermission,
 
-      reservationIds: [r.id]
+      profileIds: [{ id: r.id, type: "Reservation" }],
+
+      updated: r.updated
     }
   }
   return
@@ -151,7 +154,9 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
 
     marketingPermission: nc.marketingPermission,
 
-    reservationIds: [...c.reservationIds, r.id]
+    profileIds: [...c.profileIds, { id: g.id, type: "Guest" }],
+
+    updated: maxTimestamp(c.updated, r.updated)
   }
 }
 
@@ -168,5 +173,6 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
     includesChildren: c.includesChildren || dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
     bookingPeopleCounts,
     avgPeoplePerBooking: RoundToTwo(c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length),
+    profileIds: [...c.profileIds, { id: g.id, type: "ReservationGuest" }]
   }
 }

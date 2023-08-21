@@ -4,13 +4,13 @@ import { createReadStream } from 'fs'
 import { writeFileSync } from 'fs'
 const csv = require('csv-parser')
 
-export const loadCsv = async <T>(filename: string, mapValues?: (props: { header: string, value: string }) => any): Promise<T[]> => {
+export const loadCsv = async <T>(filename: string, mapValues?: (props: { header: string, value: string }) => any, defaults?: { [key: string]: any }): Promise<T[]> => {
   return await new Promise((resolve, reject) => {
     const results: T[] = []
     createReadStream(filename)
       .pipe(csv({ mapHeaders: ({ header }: { header: string }) => camelize(header), mapValues }))
       .on('error', (error: any) => reject(error))
-      .on('data', (data: any) => results.push(data))
+      .on('data', (data: any) => results.push({ ...data, ...defaults }))
       .on('end', () => {
         resolve(results)
       });
@@ -112,3 +112,17 @@ function distanceMax(a: string, b: string, currDis: number, aStart: number, bSta
 export const distanceMoreThan = (a: string, b: string, maxDistance: number): boolean => {
   return distanceMax(a, b, 0, 0, 0, maxDistance)
 }
+
+
+/**
+ * Returns later timestamp
+ * @param a e.g. 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
+ * @param b e.g. 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
+ * @returns
+ */
+export const maxTimestamp = (a: string, b: string): string => {
+  return a.localeCompare(b) < 0 ? a : b;
+}
+
+
+export const timestampFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZ'

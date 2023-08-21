@@ -31,11 +31,36 @@ jobs:
         with:
           credentials_json: ${{secrets.TEST_GCP_DEPLOYMENT_KEY}}
 
-      - name: Deploy
+      - name: Deploy New Reservation Hook
         uses: 'google-github-actions/deploy-cloud-functions@v1'
         with:
           name: 'NewReservationHook'
           project_id: '${{vars.TEST_GCP_PROJECT_ID}}'
           runtime: 'nodejs16'
           source_dir: ${{env.source-directory}}
-          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_RESERVATION_TOPIC_ID=${{vars.TEST_GCP_TOPIC_NAME}}'
+          region: 'europe-west1'
+          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.TEST_GCP_DATASET_ID}}'
+
+      - name: Deploy Fetch Reservations
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'FetchReservations'
+          project_id: '${{vars.TEST_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
+          event_trigger_resource: 'projects/${{vars.TEST_GCP_PROJECT_ID}}/topics/fetch-reservations-scheduler-job'
+          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.TEST_GCP_DATASET_ID}}'
+
+      - name: Deploy Merge New Reservations
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'MergeNewReservations'
+          project_id: '${{vars.TEST_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
+          event_trigger_resource: 'projects/${{vars.TEST_GCP_PROJECT_ID}}/topics/trigger-merge-pubsub'
+          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.TEST_GCP_DATASET_ID}}'

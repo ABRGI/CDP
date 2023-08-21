@@ -312,6 +312,12 @@ resource "google_bigquery_table" "reservations_table" {
         "type" : "STRING",
         "mode" : "REQUIRED",
         "description" : "'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'"
+      },
+      {
+        "name" : "updated",
+        "type" : "TIMESTAMP",
+        "mode" : "REQUIRED",
+        "description" : "Time of row updated"
       }
   ])
 }
@@ -648,6 +654,12 @@ resource "google_bigquery_table" "customers_table" {
         "description" : "How many bookings were cancelled"
       },
       {
+        "name" : "totalBookingsPending",
+        "type" : "INT64",
+        "mode" : "REQUIRED",
+        "description" : "How many bookings are pending"
+      },
+      {
         "name" : "blocked",
         "type" : "BOOL",
         "mode" : "REQUIRED",
@@ -689,11 +701,31 @@ resource "google_bigquery_table" "customers_table" {
         "description" : "Permission to send marketing messages"
       },
       {
-        "name" : "reservationIds",
+        "name" : "profileIds",
         "mode" : "REPEATED",
-        "type" : "INT64",
-        "description" : "Ids of the customer reservations"
+        "type" : "RECORD",
+        "description" : "Ids of the customer reservations",
+        "fields" : [
+          {
+            "name" : "id",
+            "mode" : "REQUIRED",
+            "type" : "INT64"
+          },
+          {
+            "name" : "type",
+            "mode" : "REQUIRED",
+            "type" : "STRING",
+            "description" : "Reservation | Guest | ReservationGuest"
+          }
+        ]
+      },
+      {
+        "name" : "updated",
+        "type" : "TIMESTAMP",
+        "mode" : "REQUIRED",
+        "description" : "Time of row updated"
       }
+
   ])
 }
 

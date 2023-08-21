@@ -4,6 +4,7 @@ import { Customer, calculateCustomerMatchPoints, hasCustomerGuest, hasCustomerRe
 import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { CustomerMerger } from "./merge"
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
+import { timestampFormat } from "./utils"
 
 /**
  * Online merging status
@@ -58,7 +59,7 @@ export class OnlineMerger {
     const latest = await this.bigQuery.queryOne<{ updated: string }>(this.datasetId, `
       SELECT MAX(updated) as updated  FROM customers
     `)
-    const latestUpdate = dayjs(latest.updated).format('YYYY-MM-DDTHH:mm:ss.SSS') || dayjs().year(1970).format('YYYY-MM-DDTHH:mm:ss.SSS')
+    const latestUpdate = latest.updated ? dayjs(latest.updated).format(timestampFormat) : dayjs().year(1970).format(timestampFormat)
 
     const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}')`)
     if (!newReservations.length) {

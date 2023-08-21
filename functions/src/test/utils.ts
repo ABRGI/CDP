@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { createHashId, getRandomFrom, getRandomInt } from "../utils";
+import { createHashId, getRandomFrom, getRandomInt, timestampFormat } from "../utils";
 import { v4 as uuidv4 } from 'uuid'
 import { Reservation } from "../reservation";
 import { Guest } from "../guest";
@@ -110,7 +110,7 @@ export const generateNewReservation = (): Reservation => {
     customerIsoCountryCode: "FIN",
     reservationExtraInfo: {},
     hotel: getRandomFrom(["HKI2", "HKI3", "JYL1", "TRE2", "POR2", "VSA2", "TKU1", "TKU2"]),
-    updated: dayjs().format('YYYY-MM-DDTHH:mm:ss.sss')
+    updated: dayjs().format(timestampFormat)
   }
 }
 

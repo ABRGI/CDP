@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { CustomerMerger } from "../merge"
 import { Reservation, mapReservationValue } from "../reservation"
-import { loadCsv } from "../utils"
+import { loadCsv, timestampFormat } from "../utils"
 import { Guest, mapGuestValue } from "../guest"
 import { getBigQuery } from "../bigquery"
 
@@ -11,7 +11,7 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   const bq = getBigQuery(projectId)
 
   process.stdout.write("Loading reservations...")
-  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue, { updated: dayjs().format('YYYY-MM-DDTHH:mm:ss.sss') })
+  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue, { updated: dayjs().format(timestampFormat) })
   const reservations = rawReservations.filter(a => dayjs(a.checkIn).isValid()).sort((a, b) => a.id - b.id)
   process.stdout.write("done.\n")
 

@@ -1,6 +1,6 @@
 import { Reservation, mapReservationValue } from "../reservation"
 import { v4 as uuidv4 } from 'uuid'
-import { getRandomInt, loadCsv, writeCsv } from "../utils"
+import { getRandomInt, loadCsv, timestampFormat, writeCsv } from "../utils"
 import dayjs from "dayjs"
 import { Guest } from "../guest"
 import { generateBirthDate, generateCompanyName, generateEmail, generateFirstName, generateHash, generateLastName, generatePhoneNumber, generateStreetAddress, getNextReservationId } from "../test/utils"
@@ -60,7 +60,7 @@ const generateReservationRow = (sampleRows: Reservation[]): Reservation => {
     cancellationReason: sr.cancellationReason,
     reservationExtraInfo: {},
     hotel: sr.hotel,
-    updated: dayjs().format('YYYY-MM-DDTHH:mm:ss.sss')
+    updated: dayjs().format(timestampFormat)
   }
 }
 
@@ -115,7 +115,7 @@ const generateGuestRow = (customer: Reservation): Guest => {
 
 export const generateTestData = async (sampleFilename: string,
   count: number): Promise<{ reservations: Reservation[], guests: Guest[] }> => {
-  const sampleRows = await loadCsv<Reservation>(sampleFilename, mapReservationValue, { updated: new Date().getTime() })
+  const sampleRows = await loadCsv<Reservation>(sampleFilename, mapReservationValue, { updated: dayjs().format(timestampFormat) })
 
   const reservations: Reservation[] = []
   const guests: Guest[] = []

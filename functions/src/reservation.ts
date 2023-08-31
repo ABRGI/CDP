@@ -179,6 +179,9 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       profileIds: [{ id: r.id, type: "Reservation" }],
 
+      city: r.customerCity,
+      streetAddress: r.customerAddress,
+
       updated: r.updated
     }
   }

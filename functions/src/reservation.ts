@@ -126,7 +126,7 @@ export const isMatch = (r1: Reservation, r2: Reservation): boolean => {
 export const createCustomerFromReservation = (r: Reservation): Customer | undefined => {
   if (r.customerSsn || r.customerEmailReal || r.customerMobile) {
     const bookingTotalNights = Math.round(dayjs(r.checkOut).diff(r.checkIn, "hours") / 24)
-    const leadTimeDays = RoundToTwo(dayjs(r.checkIn).diff(r.created, "hours") / 24)
+    const leadTimeDays = RoundToTwo(Math.max(0, dayjs(r.checkIn).diff(r.created, "hours") / 24))
     const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
       id: `R-${r.id}`,

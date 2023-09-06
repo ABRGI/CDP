@@ -762,3 +762,57 @@ resource "google_bigquery_routine" "levenshtein_distance_routine" {
 
   return_type = "{\"typeKind\" : \"FLOAT64\"}"
 }
+
+resource "google_bigquery_table" "levels_table" {
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id            = "levels"
+  deletion_protection = false
+  view {
+    query          = <<EOF
+WITH segments AS (
+  SELECT id, email, DATE_DIFF(CURRENT_DATE(), dateOfBirth, YEAR) as age,
+  ROUND(avgLeadTimeDays) as leadTimeDays,
+  lifetimeSpend,
+  totalBookings,
+  latestCheckInDate,
+  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` WHERE email IS NOT NULL AND dateOfBirth IS NOT NULL)
+SELECT id, email,
+  CASE
+    WHEN age >= 18 AND age <= 24 THEN '18-24'
+    WHEN age > 24 AND age <= 29 THEN '24-29'
+    WHEN age > 29 AND age <= 39 THEN '30-39'
+    WHEN age > 39 AND age <= 49 THEN '40-49'
+    WHEN age > 49 AND age <= 59 THEN '50-59'
+    ELSE '60+'
+    END
+    AS ageClass,
+  CASE
+    WHEN leadTimeDays < 8 THEN CAST(leadTimeDays as STRING)
+    WHEN leadTimeDays < 15 THEN '8-14'
+    WHEN leadTimeDays < 29 THEN '15-28'
+    ELSE '29+'
+    END
+    AS leadTimeClass,
+  CASE
+    WHEN lifetimeSpend <= 0 THEN '0€'
+    WHEN lifetimeSpend <= 100 THEN '1-100€'
+    WHEN lifetimeSpend <= 200 THEN '101-200€'
+    WHEN lifetimeSpend <= 500 THEN '201-500€'
+    WHEN lifetimeSpend <= 1000 THEN '501-1000€'
+    ELSE '>1000€'
+    END
+    AS spendClass,
+  CASE
+    WHEN totalBookings < 3 THEN CAST(totalBookings AS STRING)
+    WHEN totalBookings <= 5 THEN '3-5'
+    WHEN totalBookings <= 9 THEN '6-9'
+    ELSE '10+'
+    END
+    AS buyClass,
+  latestCheckInDate
+  FROM segments
+EOF
+    use_legacy_sql = false
+  }
+}

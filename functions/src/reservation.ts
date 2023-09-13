@@ -206,9 +206,13 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
   if (!nc) {
     return c
   }
-  const avgBookingsPerYear = RoundToTwo((c.totalBookings + 1) / (dayjs(r.checkIn).diff(c.firstCheckInDate, "years") + 1))
+  const firstCheckInDate = nc.firstCheckInDate.localeCompare(c.firstCheckInDate) < 0 ? nc.firstCheckInDate : c.firstCheckInDate
+  const avgBookingsPerYear = RoundToTwo((c.totalBookings + 1) / (dayjs(r.checkIn).diff(firstCheckInDate, "years") + 1))
 
-  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(c.firstCheckInDate, "days") / c.totalBookings)
+  if (!avgBookingsPerYear) {
+    throw Error(JSON.stringify(c, null, 2))
+  }
+  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(firstCheckInDate, "days") / c.totalBookings)
 
   const avgNightsPerBooking = RoundToTwo((c.avgNightsPerBooking * c.totalBookings + nc.avgNightsPerBooking) / (c.totalBookings + 1))
 
@@ -239,7 +243,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     avgPeoplePerBooking,
     avgLeadTimeDays,
 
-    firstCheckInDate: nc.firstCheckInDate.localeCompare(c.firstCheckInDate) < 0 ? nc.firstCheckInDate : c.firstCheckInDate,
+    firstCheckInDate,
     latestCheckInDate: nc.latestCheckInDate.localeCompare(c.latestCheckInDate) > 0 ? nc.latestCheckInDate : c.latestCheckInDate,
     latestCheckOutDate: nc.latestCheckOutDate.localeCompare(c.latestCheckOutDate) > 0 ? nc.latestCheckOutDate : c.latestCheckOutDate,
     latestHotel: nc.latestCheckInDate.localeCompare(c.latestCheckInDate) > 0 ? nc.latestHotel : c.latestHotel,

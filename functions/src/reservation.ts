@@ -82,7 +82,12 @@ const reservationFloats = new Set([
 
 const reservationBools = new Set([
   "cancelled", "notifyCustomer", "isOverrided",
-  "marketingPermission", "breakfastsForAll"
+  "marketingPermission", "breakfastsForAll",
+  "isFullyRefunded"
+])
+
+const timestampsWithoutTimezone = new Set([
+  "created", "pendingConfirmationSince", "checkIn", "checkOut", "confirmed"
 ])
 
 export const mapReservationValue = (props: { header: string, value: string }): boolean | string | number | undefined | object => {
@@ -97,6 +102,9 @@ export const mapReservationValue = (props: { header: string, value: string }): b
       return {}
     }
   }
+  if (timestampsWithoutTimezone.has(props.header)) {
+    return dayjs(value).format('YYYY-MM-DDTHH:mm:ss')
+  }
   if (reservationInt.has(props.header)) {
     return parseInt(value, 10)
   }
@@ -104,7 +112,7 @@ export const mapReservationValue = (props: { header: string, value: string }): b
     return parseFloat(value)
   }
   if (reservationBools.has(props.header)) {
-    return value === "TRUE"
+    return value === "TRUE" || value === "t" || value === "T" ? true : false
   }
   if (props.header === "customerMobile") {
     return value.replace(/ /g, "").replace(/ /g, "").replace(/^0/, "+358")

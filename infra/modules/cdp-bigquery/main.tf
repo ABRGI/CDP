@@ -64,13 +64,13 @@ resource "google_bigquery_table" "reservations_table" {
       {
         "name" : "customerFirstName",
         "type" : "STRING",
-        "mode" : "REQUIRED",
+        "mode" : "NULLABLE",
         "description" : "First name of customer"
       },
       {
         "name" : "customerLastName",
         "type" : "STRING",
-        "mode" : "REQUIRED",
+        "mode" : "NULLABLE",
         "description" : "Last name of customer"
       },
       {
@@ -243,7 +243,7 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "totalPaidExtraForOta",
-        "type" : "INTEGER",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : ""
       },

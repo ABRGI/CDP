@@ -122,7 +122,7 @@ export class OnlineMerger {
       this.merger.addCustomerToIndices(customer)
     }
     for (const g of guests) {
-      if (g.ssn !== r.customerSsn && g.email !== r.customerEmailReal && g.mobile !== r.customerMobile) {
+      if (g.ssn !== r.customerSsn && g.email !== r.customerEmailReal && g.mobile !== r.customerMobile && g.guestIndex > 0) {
         customer = await this.findExistingCustomer(g.ssn, g.email, g.mobile)
         if (!customer) {
           const customer = createCustomerFromGuest(r, g)

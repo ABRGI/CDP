@@ -54,6 +54,10 @@ export class CustomerMerger {
    * @param g Guest to add
    */
   addGuest(g: Guest) {
+    if (g.guestIndex <= 0) {
+      return
+    }
+
     // Handling the guest customer profile, it is only added if such customer does not exist
     const customerId = this.getExistingCustomer(g.ssn, g.email, g.mobile)
     const r = this.reservations[g.reservationId]
@@ -62,7 +66,7 @@ export class CustomerMerger {
       if (customer) {
         this.addCustomerToIndices(customer)
       }
-    } else if (customerId && g.guestIndex > 0) {
+    } else if (customerId) {
       const customer = this.customers[customerId]
       this.customers[customerId] = mergeGuestToCustomer(customer, r, g)
     }

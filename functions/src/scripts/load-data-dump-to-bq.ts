@@ -15,12 +15,8 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   const reservations = rawReservations.filter(a => dayjs(a.checkIn).isValid()).sort((a, b) => a.id - b.id)
   process.stdout.write("done.\n")
 
-  const merger = new CustomerMerger()
-
-  process.stdout.write("Merging reservations...")
-  for (const r of reservations) {
-    merger.addReservation(r)
-  }
+  process.stdout.write("Inserting reservations to BigQuery...")
+  await bq.insert(datasetId, "reservations", reservations)
   process.stdout.write("done.\n")
 
   process.stdout.write("Loading guests...")
@@ -28,21 +24,41 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   const guests = rawGuests.sort((a, b) => a.reservationId - b.reservationId)
   process.stdout.write("done.\n")
 
-  process.stdout.write("Merging guests...")
-  for (const g of guests) {
-    merger.addGuest(g)
-  }
-  process.stdout.write("done.\n")
-
-  process.stdout.write("Inserting reservations to BigQuery...")
-  await bq.insert(datasetId, "reservations", reservations)
-  process.stdout.write("done.\n")
-
   process.stdout.write("Inserting guests to BigQuery...")
   await bq.insert(datasetId, "guests", guests)
   process.stdout.write("done.\n")
 
+  const merger = new CustomerMerger()
+
+  process.stdout.write("Merging reservations...")
+  let index = 0
+  for (const r of reservations) {
+    if (!(index % 1000)) {
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(`Merging reservations...${Math.round(index * 1000 / reservations.length) / 10.0}%`);
+    }
+    merger.addReservation(r)
+    index++
+  }
+  process.stdout.write("Merging reservations...done.\n")
+
+  process.stdout.write("Merging guests...")
+  index = 0
+  for (const g of guests) {
+    if (!(index % 1000)) {
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(`Merging guests...${Math.round(index * 1000 / guests.length) / 10.0}%`);
+    }
+    merger.addGuest(g)
+    index++
+  }
+  process.stdout.write("Merging guests...done.\n")
+
   const customers = merger.getCustomers()
+  process.stdout.write(`Created ${customers.length} customer profiles.\n`)
+
   process.stdout.write("Inserting customers to BigQuery...")
   await bq.insert(datasetId, "customers", customers)
   process.stdout.write("done.\n")

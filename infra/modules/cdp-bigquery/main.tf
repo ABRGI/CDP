@@ -15,19 +15,19 @@ resource "google_bigquery_table" "reservations_table" {
     [
       {
         "name" : "id",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Reservation ID"
       },
       {
         "name" : "version",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Version number"
       },
       {
         "name" : "reservationCode",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Reservation code"
       },
@@ -39,19 +39,19 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "hotelId",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Id of the hotel"
       },
       {
         "name" : "lang",
-        "type" : "string",
+        "type" : "STRING",
         "mode" : "REQUIRED",
         "description" : "Language of the customer, e.g. 'en', 'fi', ..."
       },
       {
         "name" : "totalPaid",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Total amount paid"
       },
@@ -159,25 +159,25 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "created",
-        "type" : "DATE",
+        "type" : "DATETIME",
         "mode" : "REQUIRED",
         "description" : "Date of reservation creation"
       },
       {
         "name" : "confirmed",
-        "type" : "DATE",
+        "type" : "DATETIME",
         "mode" : "NULLABLE",
         "description" : "Reservation confirmed date"
       },
       {
         "name" : "cancelled",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "NULLABLE",
         "description" : "Is reservation cancelled"
       },
       {
         "name" : "isFullyRefunded",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Is reservation refunded"
       },
@@ -201,19 +201,19 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "notifyCustomer",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : ""
       },
       {
         "name" : "isOverrided",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : ""
       },
       {
         "name" : "type",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : ""
       },
@@ -225,7 +225,7 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "marketingPermission",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Permission to send marketing messages"
       },
@@ -243,13 +243,13 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "totalPaidExtraForOta",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : ""
       },
       {
         "name" : "breakfastsForAll",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Breakfast included for all"
       },
@@ -267,7 +267,7 @@ resource "google_bigquery_table" "reservations_table" {
       },
       {
         "name" : "memberId",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "NULLABLE",
         "description" : "Id if one is member"
       },
@@ -297,7 +297,7 @@ resource "google_bigquery_table" "reservations_table" {
           {
             "name" : "includeBreakfast",
             "mode" : "NULLABLE",
-            "type" : "BOOL"
+            "type" : "BOOLEAN"
           }
         ]
       },
@@ -332,25 +332,25 @@ resource "google_bigquery_table" "guests_table" {
     [
       {
         "name" : "id",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Guest ID"
       },
       {
         "name" : "reservationId",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Reservation ID"
       },
       {
         "name" : "roomAlias",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Room alias"
       },
       {
         "name" : "guestIndex",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Index of the guest"
       },
@@ -404,7 +404,7 @@ resource "google_bigquery_table" "guests_table" {
       },
       {
         "name" : "age",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "NULLABLE",
         "description" : "Guest age in years"
       },
@@ -416,7 +416,7 @@ resource "google_bigquery_table" "guests_table" {
       },
       {
         "name" : "marketingPermission",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Permission to send marketing messages"
       },
@@ -511,7 +511,7 @@ resource "google_bigquery_table" "customers_table" {
       },
       {
         "name" : "includesChildren",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Customer has children in reservations"
       },
@@ -523,55 +523,55 @@ resource "google_bigquery_table" "customers_table" {
       },
       {
         "name" : "lifetimeSpend",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Total amount of money spend in EUR"
       },
       {
         "name" : "bookingNightsCounts",
         "mode" : "REPEATED",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "description" : "Number of nights in bookings"
       },
       {
         "name" : "bookingPeopleCounts",
         "mode" : "REPEATED",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "description" : "Number of nights in bookings"
       },
       {
         "name" : "bookingLeadTimesDays",
         "mode" : "REPEATED",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "description" : "Lead time in bookings"
       },
       {
         "name" : "avgBookingsPerYear",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Average of bookings per year"
       },
       {
         "name" : "avgBookingFrequencyDays",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Average days between bookings"
       },
       {
         "name" : "avgNightsPerBooking",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Average nights per booking"
       },
       {
         "name" : "avgPeoplePerBooking",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Average people per booking"
       },
       {
         "name" : "avgLeadTimeDays",
-        "type" : "FLOAT64",
+        "type" : "FLOAT",
         "mode" : "REQUIRED",
         "description" : "Average lead time of bookings"
       },
@@ -601,79 +601,79 @@ resource "google_bigquery_table" "customers_table" {
       },
       {
         "name" : "totalBookingComBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total booking.com bookings"
       },
       {
         "name" : "totalExpediaBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total expedia bookings"
       },
       {
         "name" : "totalNelsonBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total nelson bookings"
       },
       {
         "name" : "totalMobileAppBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total mobile app bookings"
       },
       {
         "name" : "totalLeisureBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total leisure bookings"
       },
       {
         "name" : "totalBusinessBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total business bookings"
       },
       {
         "name" : "totalBookingsAsGuest",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total bookings as guest"
       },
       {
         "name" : "totalBookings",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total bookings"
       },
       {
         "name" : "totalBookingCancellations",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "How many bookings were cancelled"
       },
       {
         "name" : "totalBookingsPending",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "How many bookings are pending"
       },
       {
         "name" : "blocked",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Indicates if customer is blocked or not"
       },
       {
         "name" : "totalWeekdays",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Number of nights stayed during week"
       },
       {
         "name" : "totalWeekendDays",
-        "type" : "INT64",
+        "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Number of nights stayed during weekend"
       },
@@ -690,13 +690,14 @@ resource "google_bigquery_table" "customers_table" {
           {
             "name" : "count",
             "mode" : "REQUIRED",
-            "type" : "INT64"
+            "type" : "INTEGER"
           }
-        ]
+        ],
+        "description" : "Total count of bookings the customer has made"
       },
       {
         "name" : "marketingPermission",
-        "type" : "BOOL",
+        "type" : "BOOLEAN",
         "mode" : "REQUIRED",
         "description" : "Permission to send marketing messages"
       },
@@ -709,7 +710,8 @@ resource "google_bigquery_table" "customers_table" {
           {
             "name" : "id",
             "mode" : "REQUIRED",
-            "type" : "INT64"
+            "type" : "INTEGER"
+            "description" : "Id of the item"
           },
           {
             "name" : "type",

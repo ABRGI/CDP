@@ -114,7 +114,9 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       profileIds: [{ id: r.id, type: "Reservation" }],
 
-      updated: r.updated
+      updated: r.updated,
+
+      voucherKeys: []
     }
   }
   return

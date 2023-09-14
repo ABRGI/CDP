@@ -318,6 +318,11 @@ resource "google_bigquery_table" "reservations_table" {
         "type" : "TIMESTAMP",
         "mode" : "REQUIRED",
         "description" : "Time of row updated"
+      },
+      {
+        "name" : "voucherKeys",
+        "mode" : "REPEATED",
+        "type" : "STRING"
       }
   ])
 }
@@ -726,8 +731,25 @@ resource "google_bigquery_table" "customers_table" {
         "type" : "TIMESTAMP",
         "mode" : "REQUIRED",
         "description" : "Time of row updated"
-      }
-
+      },
+      {
+        "name" : "voucherKeys",
+        "mode" : "REPEATED",
+        "type" : "RECORD",
+        "fields" : [
+          {
+            "name" : "reservationId",
+            "mode" : "REQUIRED",
+            "type" : "INTEGER"
+          },
+          {
+            "name" : "key",
+            "mode" : "REQUIRED",
+            "type" : "STRING"
+          }
+        ],
+        "description" : "Vouchers the customer has used"
+      },
   ])
 }
 

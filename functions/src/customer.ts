@@ -56,6 +56,8 @@ export type Customer = {
 
   profileIds: { id: number, type: 'Reservation' | 'Guest' | 'ReservationGuest' }[]
 
+  voucherKeys: { reservationId: number, key: string }[]
+
   updated: string
 }
 

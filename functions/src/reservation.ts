@@ -2,6 +2,7 @@ import dayjs from "dayjs"
 import { Customer } from "./customer"
 import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
 import { mergeHotelCounts } from "./hotel"
+import { Voucher } from "./voucher"
 
 export type WaitingReservation = {
   id: number
@@ -59,6 +60,7 @@ export type Reservation = {
   customerSignatureId?: string,     // '', 'xxxxx.png'
   hotel: string                     // 'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'
   updated: string                   // Timestamp of latest update
+  voucherKeys: string[]
 }
 
 export type MinimalReservation = {
@@ -190,6 +192,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       city: r.customerCity,
       streetAddress: r.customerAddress,
 
+      voucherKeys: r.voucherKeys.map(vk => ({ reservationId: r.id, key: vk })),
+
       updated: r.updated
     }
   }
@@ -270,6 +274,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     marketingPermission: nc.marketingPermission,
 
     profileIds: [...c.profileIds, ...nc.profileIds],
+
+    voucherKeys: [...c.voucherKeys, ...nc.voucherKeys],
 
     updated: maxTimestamp(c.updated, nc.updated)
   }

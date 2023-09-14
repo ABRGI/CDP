@@ -787,6 +787,45 @@ resource "google_bigquery_routine" "levenshtein_distance_routine" {
   return_type = "{\"typeKind\" : \"FLOAT64\"}"
 }
 
+resource "google_bigquery_routine" "map_voucher_category_routine" {
+  project            = var.project_id
+  dataset_id         = google_bigquery_dataset.cdp_dataset.dataset_id
+  routine_id         = "map_voucher_category_routine"
+  routine_type       = "SCALAR_FUNCTION"
+  language           = "JAVASCRIPT"
+  imported_libraries = ["gs://${google_storage_bucket.javascript_bucket.name}/bigquery.js"]
+  definition_body    = "return mapVoucherCategory(keys)"
+  determinism_level  = "DETERMINISTIC"
+
+  arguments {
+    name = "keys"
+    data_type = jsonencode({
+      typeKind : "ARRAY",
+      arrayElementType : {
+        typeKind : "STRUCT",
+        structType : {
+          fields : [
+            {
+              name : "reservationId",
+              type : {
+                typeKind : "INT64"
+              }
+            },
+            {
+              name : "key",
+              type : {
+                typeKind : "STRING",
+              }
+            }
+          ]
+        }
+      }
+    })
+  }
+
+  return_type = jsonencode({ typeKind : "STRING" })
+}
+
 resource "google_bigquery_table" "levels_table" {
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
@@ -800,6 +839,7 @@ WITH segments AS (
   lifetimeSpend,
   totalBookings,
   latestCheckInDate,
+  voucherKeys
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` WHERE email IS NOT NULL AND dateOfBirth IS NOT NULL)
 SELECT id, email,
   CASE
@@ -834,7 +874,8 @@ SELECT id, email,
     ELSE '10+'
     END
     AS buyClass,
-  latestCheckInDate
+  latestCheckInDate,
+  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory
   FROM segments
 EOF
     use_legacy_sql = false

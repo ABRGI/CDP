@@ -839,8 +839,10 @@ WITH segments AS (
   lifetimeSpend,
   totalBookings,
   latestCheckInDate,
-  voucherKeys
-  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` WHERE email IS NOT NULL AND dateOfBirth IS NOT NULL)
+  voucherKeys,
+  IF(dateOfBirth IS NULL, 'Yes', 'No') as hasDateOfBirth,
+  IF(ssn IS NULL, 'Yes', 'No') as hasSsn
+  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
   CASE
     WHEN age >= 18 AND age <= 24 THEN '18-24'
@@ -875,6 +877,8 @@ SELECT id, email,
     END
     AS buyClass,
   latestCheckInDate,
+  hasDateOfBirth,
+  hasSsn,
   `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory
   FROM segments
 EOF

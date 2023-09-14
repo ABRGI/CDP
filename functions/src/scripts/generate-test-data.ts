@@ -59,7 +59,8 @@ const generateReservationRow = (sampleRows: Reservation[]): Reservation => {
     cancellationReason: sr.cancellationReason,
     reservationExtraInfo: {},
     hotel: sr.hotel,
-    updated: dayjs().format(timestampFormat)
+    updated: dayjs().format(timestampFormat),
+    voucherKeys: []
   }
 }
 

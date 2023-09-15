@@ -879,6 +879,7 @@ SELECT id, email,
   latestCheckInDate,
   hasDateOfBirth,
   hasSsn,
+  IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
   `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory
   FROM segments
 EOF

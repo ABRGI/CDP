@@ -822,7 +822,6 @@ resource "google_bigquery_routine" "map_voucher_category_routine" {
       }
     })
   }
-
   return_type = jsonencode({ typeKind : "STRING" })
 }
 
@@ -896,3 +895,71 @@ EOF
     use_legacy_sql = false
   }
 }
+
+
+resource "google_bigquery_routine" "map_voucher_category_reservations_routine" {
+  project            = var.project_id
+  dataset_id         = google_bigquery_dataset.cdp_dataset.dataset_id
+  routine_id         = "map_voucher_category_reservations_routine"
+  routine_type       = "SCALAR_FUNCTION"
+  language           = "JAVASCRIPT"
+  imported_libraries = ["gs://${google_storage_bucket.javascript_bucket.name}/bigquery.js"]
+  definition_body    = "return mapVoucherCategoryFromReservations(keys)"
+  determinism_level  = "DETERMINISTIC"
+
+  arguments {
+    name = "keys"
+    data_type = jsonencode({
+      typeKind : "ARRAY",
+      arrayElementType : {
+        typeKind : "STRING"
+      }
+    })
+  }
+  return_type = jsonencode({ typeKind : "STRING" })
+}
+
+resource "google_bigquery_table" "reservation_categories_table" {
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id            = "reservationCategories"
+  deletion_protection = false
+  view {
+    query          = <<EOF
+WITH segments AS (
+  SELECT FORMAT_DATE('%A', checkIn) as checkInWeekday,
+  FORMAT_DATE('%A', created) as creationWeekday,
+  checkIn,
+  bookingChannel,
+  totalPaid,
+  hotel,
+  state,
+  voucherKeys,
+  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_reservations_routine(voucherKeys) as voucherCategory
+  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.reservations`)
+SELECT
+  checkInWeekday,
+  creationWeekday,
+  checkIn,
+  CASE
+    WHEN bookingChannel = 'BOOKINGCOM' THEN 'booking.com'
+    WHEN bookingChannel = 'LEGACY' THEN 'Legacy'
+    WHEN bookingChannel = 'EXPEDIA' THEN 'Expedia'
+    WHEN bookingChannel = 'NELSON' THEN 'omenahotels.com'
+    WHEN bookingChannel = 'MOBILEAPP' Then 'Mobile App'
+    ELSE 'Unknown'
+    END
+    AS bookingChannel,
+  totalPaid,
+  hotel,
+  state,
+  voucherKeys[SAFE_OFFSET(0)] as voucherKey,
+  voucherCategory
+  FROM segments
+EOF
+    use_legacy_sql = false
+  }
+}
+
+
+

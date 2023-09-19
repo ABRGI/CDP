@@ -38,3 +38,15 @@ function mapVoucherCategory(keys) {
   }
   return "Some"
 }
+
+function mapVoucherCategoryFromReservation(keys) {
+  if (!keys.length) {
+    return "No vouchers"
+  }
+  for (const key of keys) {
+    if (key.indexOf("NSN") !== -1) {
+      return "NSN"
+    }
+  }
+  return "Some"
+}

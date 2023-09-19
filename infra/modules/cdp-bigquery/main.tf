@@ -838,6 +838,7 @@ WITH segments AS (
   ROUND(avgLeadTimeDays) as leadTimeDays,
   lifetimeSpend,
   totalBookings,
+  totalBookingsAsGuest,
   latestCheckInDate,
   voucherKeys,
   IF(dateOfBirth IS NULL, 'Yes', 'No') as hasDateOfBirth,
@@ -877,6 +878,13 @@ SELECT id, email,
     ELSE '10+'
     END
     AS buyClass,
+  CASE
+    WHEN totalBookings <= 0 AND totalBookingsAsGuest > 0 THEN 'Guest only'
+    WHEN totalBookings > 0 AND totalBookingsAsGuest > 0 THEN 'Guest and Booker'
+    WHEN totalBookings > 0 AND totalBookingsAsGuest <= 0 THEN 'Booker only'
+    ELSE 'Unknown'
+    END
+    AS typeOfCustomer,
   latestCheckInDate,
   hasDateOfBirth,
   hasSsn,

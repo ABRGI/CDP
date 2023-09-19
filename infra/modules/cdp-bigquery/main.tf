@@ -841,7 +841,8 @@ WITH segments AS (
   latestCheckInDate,
   voucherKeys,
   IF(dateOfBirth IS NULL, 'Yes', 'No') as hasDateOfBirth,
-  IF(ssn IS NULL, 'Yes', 'No') as hasSsn
+  IF(ssn IS NULL, 'Yes', 'No') as hasSsn,
+  level
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
   CASE
@@ -879,6 +880,7 @@ SELECT id, email,
   latestCheckInDate,
   hasDateOfBirth,
   hasSsn,
+  level,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
   `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory
   FROM segments

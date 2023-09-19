@@ -840,9 +840,11 @@ WITH segments AS (
   totalBookingsAsGuest,
   latestCheckInDate,
   voucherKeys,
+  IF(includesChildren, 'Yes', 'No') as includesChildren,
   IF(marketingPermission, 'Yes', 'No') as marketingPermission,
   IF(dateOfBirth IS NULL, 'Yes', 'No') as hasDateOfBirth,
   IF(ssn IS NULL, 'Yes', 'No') as hasSsn,
+  avgBookingFrequencyDays,
   level
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
@@ -890,6 +892,8 @@ SELECT id, email,
   hasSsn,
   level,
   marketingPermission,
+  includesChildren,
+  avgBookingFrequencyDays,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
   `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory
   FROM segments

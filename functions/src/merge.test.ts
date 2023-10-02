@@ -101,6 +101,7 @@ describe('Merge tests', () => {
     const customer = customers[0]
 
     expect(customer.includesChildren).toBe(true)
+    expect(customer.totalChildrenBookings).toBe(1)
     expect(customer.bookingPeopleCounts).toEqual([2])
 
     const guestCustomer = customers[1]

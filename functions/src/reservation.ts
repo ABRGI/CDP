@@ -180,6 +180,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
       totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
       totalGroupBookings: 0,
+      totalChildrenBookings: 0,
       blocked: r.state === "BLOCKED",
 
       totalWeekDays: weekDays,
@@ -259,6 +260,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalExpediaBookings: c.totalExpediaBookings + nc.totalExpediaBookings,
     totalNelsonBookings: c.totalNelsonBookings + nc.totalNelsonBookings,
     totalMobileAppBookings: c.totalMobileAppBookings + nc.totalMobileAppBookings,
+    totalChildrenBookings: c.totalChildrenBookings + nc.totalChildrenBookings,
 
     totalLeisureBookings: c.totalLeisureBookings + nc.totalLeisureBookings,
     totalBusinessBookings: c.totalBookingComBookings + nc.totalBusinessBookings,
@@ -266,6 +268,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalBookingsAsGuest: c.totalBookingsAsGuest,
     totalBookings: c.totalBookings + 1,
     totalBookingCancellations: c.totalBookingCancellations + nc.totalBookingCancellations,
+    totalBookingsPending: c.totalBookingsPending + nc.totalBookingsPending,
+    totalGroupBookings: c.totalGroupBookings + nc.totalGroupBookings,
 
     blocked: c.blocked || nc.blocked,
 

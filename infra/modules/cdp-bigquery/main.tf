@@ -671,6 +671,12 @@ resource "google_bigquery_table" "customers_table" {
         "description" : "Total group bookings"
       },
       {
+        "name" : "totalChildrenBookings",
+        "type" : "INTEGER",
+        "mode" : "REQUIRED",
+        "description" : "Total of bookings with children"
+      },
+      {
         "name" : "memberId",
         "type" : "INTEGER",
         "mode" : "NULLABLE",

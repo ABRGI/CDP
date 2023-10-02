@@ -288,6 +288,8 @@ describe('Merge tests', () => {
     expect(customer.totalHotelBookingCounts).toEqual([{ hotel: "TKU1", count: 1 }, { hotel: "TKU2", count: 1 }])
     expect(customer.marketingPermission).toBe(true)
     expect(customer.profileIds).toEqual([{ id: r1.id, type: "Reservation" }, { id: r2.id, type: "Reservation" }])
+    expect(customer.isoCountryCode).toEqual("FIN")
+    expect(customer.memberId).toEqual(1234)
 
     const r3 = generateNewReservation()
     r3.customerSsn = r2.customerSsn

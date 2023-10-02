@@ -146,6 +146,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       lastName: r.customerLastName,
       phoneNumber: r.customerMobile,
       dateOfBirth: r.customerDateOfBirth,
+      memberId: r.memberId,
       isoCountryCode: r.customerIsoCountryCode,
       includesChildren: false,
       level: 'New',
@@ -232,7 +233,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     lastName: nc.lastName || c.lastName,
     phoneNumber: nc.phoneNumber || c.phoneNumber,
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
-    isoCountryCode: c.isoCountryCode || nc.dateOfBirth,
+    memberId: c.memberId || nc.memberId,
+    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
     level: c.level === 'Guest' ? 'New' : c.level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
 

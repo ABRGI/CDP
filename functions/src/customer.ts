@@ -13,6 +13,7 @@ export type Customer = {
   streetAddress?: string
   city?: string
   isoCountryCode?: string                                      // ISO country code, e.g. FI
+  memberId?: number
   includesChildren: boolean
   level: 'VIP' | 'Loyal' | 'Passive' | 'Risk' | 'New' | 'Guest'
   lifetimeSpend: number                                 // In euros

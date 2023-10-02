@@ -665,6 +665,18 @@ resource "google_bigquery_table" "customers_table" {
         "description" : "How many bookings are pending"
       },
       {
+        "name" : "totalGroupBookings",
+        "type" : "INTEGER",
+        "mode" : "REQUIRED",
+        "description" : "Total group bookings"
+      },
+      {
+        "name" : "memberId",
+        "type" : "INTEGER",
+        "mode" : "NULLABLE",
+        "description" : "Id if one is member"
+      },
+      {
         "name" : "blocked",
         "type" : "BOOLEAN",
         "mode" : "REQUIRED",

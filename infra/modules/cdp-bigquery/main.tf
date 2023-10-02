@@ -858,9 +858,16 @@ WITH segments AS (
   IF(ssn IS NULL, 'No', 'Yes') as hasSsn,
   avgBookingFrequencyDays,
   isoCountryCode,
+  avgNightsPerBooking,
   level
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
+  CASE
+    WHEN avgNightsPerBooking >= 1 AND avgNightsPerBooking <= 5 THEN CAST(ROUND(avgNightsPerBooking) as STRING)
+    WHEN avgNightsPerBooking <= 10 THEN '6-10'
+    ELSE '10+'
+    END
+    as avgNightPerBookingClass,
   CASE
     WHEN age >= 18 AND age <= 24 THEN '18-24'
     WHEN age > 24 AND age <= 29 THEN '24-29'
@@ -924,7 +931,7 @@ resource "google_bigquery_routine" "map_voucher_category_reservations_routine" {
   routine_type       = "SCALAR_FUNCTION"
   language           = "JAVASCRIPT"
   imported_libraries = ["gs://${google_storage_bucket.javascript_bucket.name}/bigquery.js"]
-  definition_body    = "return mapVoucherCategoryFromReservations(keys)"
+  definition_body    = "return mapVoucherCategoryFromReservation(keys)"
   determinism_level  = "DETERMINISTIC"
 
   arguments {
@@ -955,6 +962,7 @@ WITH segments AS (
   hotel,
   state,
   voucherKeys,
+  DATE_DIFF(EXTRACT(DATE FROM checkOut), EXTRACT(DATE FROM checkIn), DAY) as nights,
   `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_reservations_routine(voucherKeys) as voucherCategory
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.reservations`)
 SELECT
@@ -974,7 +982,14 @@ SELECT
   hotel,
   state,
   voucherKeys[SAFE_OFFSET(0)] as voucherKey,
-  voucherCategory
+  nights,
+  voucherCategory,
+  CASE
+    WHEN nights >= 1 AND nights <= 5 THEN CAST(ROUND(nights) as STRING)
+    WHEN nights <= 10 THEN '6-10'
+    ELSE '10+'
+    END
+    as nightsClass
   FROM segments
 EOF
     use_legacy_sql = false

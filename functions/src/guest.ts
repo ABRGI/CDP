@@ -102,6 +102,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       totalBookings: 0,
       totalBookingCancellations: 0,
       totalBookingsPending: 0,
+      totalGroupBookings: 0,
 
       blocked: r.state === "BLOCKED",
 
@@ -172,6 +173,7 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
     index < c.bookingPeopleCounts.length - 1 ? count : count + 1)
   return {
     ...c,
+    totalGroupBookings: c.totalGroupBookings + (g.roomAlias > 1 ? 1 : 0),
     includesChildren: c.includesChildren || dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
     bookingPeopleCounts,
     avgPeoplePerBooking: RoundToTwo(c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length),

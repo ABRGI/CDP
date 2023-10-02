@@ -179,6 +179,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookings: 1,
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
       totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
+      totalGroupBookings: 0,
       blocked: r.state === "BLOCKED",
 
       totalWeekDays: weekDays,

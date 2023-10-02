@@ -169,8 +169,13 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
  * @param g Guest stay
  */
 export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
-  const bookingPeopleCounts = c.bookingPeopleCounts.map((count, index) =>
-    index < c.bookingPeopleCounts.length - 1 ? count : count + 1)
+
+  const bookingPeopleCounts = c.bookingPeopleCounts.map((count, index) => {
+    if (g.reservationId === c.profileIds[index].id && c.profileIds[index].type === "Reservation") {
+      return count + 1
+    }
+    return count
+  })
   return {
     ...c,
     totalGroupBookings: c.totalGroupBookings + (g.roomAlias > 1 ? 1 : 0),

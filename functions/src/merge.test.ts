@@ -11,70 +11,6 @@ describe('Merge tests', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
-  /*
-    test('Creating new customers', () => {
-      const merger = new CustomerMerger()
-      merger.addReservation(generateNewReservation())
-      merger.addReservation(generateNewReservation())
-      merger.addReservation(generateNewReservation())
-
-      expect(Object.keys(merger.customers).length).toBe(3)
-    })
-
-    test('Merging reservations to customer by SSN', () => {
-      const reservation = generateNewReservation()
-      const reservation2 = {
-        ...generateNewReservation(),
-        customerSsn: reservation.customerSsn,
-        customerEmailReal: reservation.customerEmailReal,
-        customerMobile: reservation.customerMobile,
-        customerFirstName: reservation.customerFirstName,
-        customerLastName: reservation.customerLastName,
-        hotel: reservation.hotel
-      }
-      const merger = new CustomerMerger()
-      merger.addReservation(reservation)
-      merger.addReservation(reservation2)
-
-      const customers = merger.getCustomers()
-      expect(customers.length).toBe(1)
-
-      const customerR1 = createCustomerFromReservation(reservation)
-      const customerR2 = createCustomerFromReservation(reservation2)
-      const customer = customers[0]
-      expect(customer.bookingNightsCounts).toEqual([customerR1?.bookingNightsCounts[0], customerR2?.bookingNightsCounts[0]])
-      expect(customer.bookingPeopleCounts).toEqual([customerR1?.bookingPeopleCounts[0], customerR2?.bookingPeopleCounts[0]])
-      expect(customer.bookingLeadTimesDays.length).toBe(2)
-      expect(customer.lifetimeSpend).toBe(198)
-      expect(customer.avgPeoplePerBooking).toBe(1)
-
-      expect(customer.totalBookings).toBe(2)
-      expect(customer.totalHotelBookingCounts).toEqual([{ hotel: reservation.hotel, count: 2 }])
-    })
-
-    test('Merging reservations to customer by phonenumber and email', () => {
-      const reservation = generateNewReservation()
-      const merger = new CustomerMerger()
-      merger.addReservation(reservation)
-      merger.addReservation({
-        ...generateNewReservation(), customerMobile: reservation.customerMobile,
-        customerEmailReal: reservation.customerEmailReal,
-        customerSsn: undefined
-      })
-      expect(Object.keys(merger.customers).length).toBe(1)
-    })
-
-    test('Not merging reservations by phonenumber and email when SSNs do not match', () => {
-      const reservation = generateNewReservation()
-      const merger = new CustomerMerger()
-      merger.addReservation(reservation)
-      merger.addReservation({
-        ...generateNewReservation(), customerMobile: reservation.customerMobile,
-        customerEmailReal: reservation.customerEmailReal,
-        customerSsn: reservation.customerSsn + "_not_matching"
-      })
-      expect(Object.keys(merger.customers).length).toBe(2)
-    })*/
 
   test('Merging reservations everything matches except SSN', () => {
     const reservation = generateNewReservation()
@@ -225,6 +161,27 @@ describe('Merge tests', () => {
 
     const customerUpd = merger.getCustomers()[0]
     expect(customer).toEqual(customerUpd)
+  })
+
+  test('Should increase total group bookings', () => {
+    const merger = new CustomerMerger()
+
+    const reservation = generateNewReservation()
+    merger.addReservation(reservation)
+
+    const guest = generateNewGuest(reservation.id)
+    guest.guestIndex = 1
+    guest.roomAlias = 2
+    merger.addGuest(guest)
+
+    const guest2 = generateNewGuest(reservation.id)
+    guest2.guestIndex = 2
+    guest2.roomAlias = 1
+    merger.addGuest(guest2)
+
+    const customer = merger.getCustomers()[0]
+    expect(customer.totalGroupBookings).toEqual(1)
+    expect(customer.bookingPeopleCounts).toEqual([3])
   })
 
   test('Should update guest for customer not booking the reservation', () => {

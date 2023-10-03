@@ -858,6 +858,9 @@ WITH segments AS (
   totalBookingsAsGuest,
   latestCheckInDate,
   voucherKeys,
+  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory,
+  IF(avgPeoplePerBooking <= 1, 'Yes', 'No') as single,
+  IF(totalGroupBookings > 0, 'Yes', 'No') as includesGroups,
   IF(includesChildren, 'Yes', 'No') as includesChildren,
   IF(marketingPermission, 'Yes', 'No') as marketingPermission,
   IF(dateOfBirth IS NULL, 'No', 'Yes') as hasDateOfBirth,
@@ -865,6 +868,7 @@ WITH segments AS (
   avgBookingFrequencyDays,
   isoCountryCode,
   avgNightsPerBooking,
+  totalBusinessBookings,
   level
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
@@ -919,10 +923,13 @@ SELECT id, email,
   level,
   marketingPermission,
   includesChildren,
+  includesGroups,
+  single,
+  IF(totalBusinessBookings > 0 OR voucherCategory = 'NSN', 'Yes', 'No') as includesBusiness,
   avgBookingFrequencyDays,
   isoCountryCode,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
-  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory
+  voucherCategory
   FROM segments
 EOF
     use_legacy_sql = false

@@ -291,6 +291,6 @@ describe('Merge tests', () => {
       { id: r1.id, type: "Reservation" },
       { id: r2.id, type: "Reservation" },
       { id: r3.id, type: "Reservation" }])
-    expect(customerUpd.created).toEqual("2024-07-15")
+    expect(customerUpd.created).toEqual("2023-02-20")
   })
 });

@@ -121,7 +121,7 @@ export const distanceMoreThan = (a: string, b: string, maxDistance: number): boo
  * @returns
  */
 export const maxTimestamp = (a: string, b: string): string => {
-  return a.localeCompare(b) < 0 ? a : b;
+  return a.localeCompare(b) > 0 ? a : b;
 }
 
 /**
@@ -134,7 +134,7 @@ export const minTimestamp = (a: string | undefined, b: string | undefined): stri
   if (!a) return b
   if (!b) return a
   if (!a && !b) return
-  return a.localeCompare(b) > 0 ? a : b;
+  return a.localeCompare(b) < 0 ? a : b;
 }
 
 

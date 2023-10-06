@@ -126,6 +126,7 @@ describe('Merge tests', () => {
     merger.addGuest(guest)
 
     expect(merger.getCustomers()[1].level).toEqual('Guest')
+    expect(merger.getCustomers()[1].created).toBeUndefined()
 
     const reservation = generateNewReservation()
     reservation.customerSsn = guest.ssn

@@ -875,6 +875,8 @@ WITH segments AS (
   isoCountryCode,
   avgNightsPerBooking,
   totalBusinessBookings,
+  bookingNightsCounts,
+  created,
   level
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
@@ -931,9 +933,15 @@ SELECT id, email,
   includesChildren,
   includesGroups,
   single,
+  created,
+  age,
+  totalBookings,
+  leadTimeDays,
+  lifetimeSpend,
   IF(totalBusinessBookings > 0 OR voucherCategory = 'NSN', 'Yes', 'No') as includesBusiness,
   avgBookingFrequencyDays,
   isoCountryCode,
+  bookingNightsCounts,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
   voucherCategory
   FROM segments

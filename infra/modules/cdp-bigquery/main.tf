@@ -877,7 +877,8 @@ WITH segments AS (
   totalBusinessBookings,
   bookingNightsCounts,
   created,
-  level
+  level,
+  ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
   CASE
@@ -943,7 +944,8 @@ SELECT id, email,
   isoCountryCode,
   bookingNightsCounts,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
-  voucherCategory
+  voucherCategory,
+  cancellationPercentage
   FROM segments
 EOF
     use_legacy_sql = false

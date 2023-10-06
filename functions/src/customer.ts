@@ -61,6 +61,7 @@ export type Customer = {
 
   voucherKeys: { reservationId: number, key: string }[]
 
+  created?: string
   updated: string
 }
 

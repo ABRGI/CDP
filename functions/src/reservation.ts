@@ -1,6 +1,6 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
+import { RoundToTwo, calculateDaysBetween, maxTimestamp, minTimestamp } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 import { Voucher } from "./voucher"
 
@@ -71,6 +71,7 @@ export type MinimalReservation = {
   state: string,
   marketingPermission: boolean,
   updated: string
+  created: string
 }
 
 const reservationInt = new Set([
@@ -197,7 +198,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       voucherKeys: r.voucherKeys.map(vk => ({ reservationId: r.id, key: vk })),
 
-      updated: r.updated
+      updated: r.updated,
+      created: r.created
     }
   }
 }
@@ -284,6 +286,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     voucherKeys: [...c.voucherKeys, ...nc.voucherKeys],
 
-    updated: maxTimestamp(c.updated, nc.updated)
+    updated: maxTimestamp(c.updated, nc.updated),
+    created: minTimestamp(c.created, nc.created)
   }
 }

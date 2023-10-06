@@ -745,6 +745,12 @@ resource "google_bigquery_table" "customers_table" {
         ]
       },
       {
+        "name" : "created",
+        "type" : "TIMESTAMP",
+        "mode" : "NULLABLE",
+        "description" : "Time of profile created (taken from reservation)"
+      },
+      {
         "name" : "updated",
         "type" : "TIMESTAMP",
         "mode" : "REQUIRED",

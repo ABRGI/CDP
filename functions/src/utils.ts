@@ -124,5 +124,18 @@ export const maxTimestamp = (a: string, b: string): string => {
   return a.localeCompare(b) < 0 ? a : b;
 }
 
+/**
+ * Returns earlier timestamp
+ * @param a e.g. 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
+ * @param b e.g. 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
+ * @returns
+ */
+export const minTimestamp = (a: string | undefined, b: string | undefined): string | undefined => {
+  if (!a) return b
+  if (!b) return a
+  if (!a && !b) return
+  return a.localeCompare(b) > 0 ? a : b;
+}
+
 
 export const timestampFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZ'

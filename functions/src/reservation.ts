@@ -199,7 +199,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       voucherKeys: r.voucherKeys.map(vk => ({ reservationId: r.id, key: vk })),
 
       updated: r.updated,
-      created: r.created
+      created: r.created,
+      latestCreated: r.created
     }
   }
 }
@@ -286,7 +287,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     voucherKeys: [...c.voucherKeys, ...nc.voucherKeys],
 
-    updated: maxTimestamp(c.updated, nc.updated),
-    created: minTimestamp(c.created, nc.created)
+    updated: maxTimestamp(c.updated, nc.updated)!,
+    created: minTimestamp(c.created, nc.created),
+    latestCreated: maxTimestamp(c.created, nc.created)
   }
 }

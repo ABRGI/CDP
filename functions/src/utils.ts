@@ -120,7 +120,10 @@ export const distanceMoreThan = (a: string, b: string, maxDistance: number): boo
  * @param b e.g. 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
  * @returns
  */
-export const maxTimestamp = (a: string, b: string): string => {
+export const maxTimestamp = (a: string | undefined, b: string | undefined): string | undefined => {
+  if (!a) return b
+  if (!b) return a
+  if (!a && !b) return
   return a.localeCompare(b) > 0 ? a : b;
 }
 

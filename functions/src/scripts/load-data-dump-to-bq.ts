@@ -27,20 +27,20 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   const reservations = rawReservations.sort((a, b) => a.id - b.id)
     .map(r => ({ ...r, totalPaid: pricesMap[r.id] ? pricesMap[r.id].totalPrice : 0.0, voucherKeys: (voucherMap[r.id] || []).map(v => v.voucherKey) }))
   process.stdout.write("done.\n")
-
-  process.stdout.write("Inserting reservations to BigQuery...")
-  await bq.insert(datasetId, "reservations", reservations)
-  process.stdout.write("done.\n")
-
+  /*
+    process.stdout.write("Inserting reservations to BigQuery...")
+    await bq.insert(datasetId, "reservations", reservations)
+    process.stdout.write("done.\n")
+  */
   process.stdout.write("Loading guests...")
   const rawGuests = await loadCsv<Guest>(guestFilename, mapGuestValue)
   const guests = rawGuests.sort((a, b) => a.reservationId - b.reservationId)
   process.stdout.write("done.\n")
-
-  process.stdout.write("Inserting guests to BigQuery...")
-  await bq.insert(datasetId, "guests", guests)
-  process.stdout.write("done.\n")
-
+  /*
+    process.stdout.write("Inserting guests to BigQuery...")
+    await bq.insert(datasetId, "guests", guests)
+    process.stdout.write("done.\n")
+  */
   const merger = new CustomerMerger()
 
   process.stdout.write("Merging reservations...")

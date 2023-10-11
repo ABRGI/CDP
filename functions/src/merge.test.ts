@@ -201,6 +201,7 @@ describe('Merge tests', () => {
     expect(customer.bookingPeopleCounts).toEqual([1])
     expect({ ...customer, bookingPeopleCounts: [2], profileIds: [...customer.profileIds, { id: guest.id, type: "ReservationGuest" }] }).toEqual(customerUpd)
     expect(customer.created).toEqual(reservation.created)
+    expect(customer.latestCreated).toEqual(reservation.created)
   })
 
   test('Basic metrics from several reservations', () => {
@@ -292,5 +293,6 @@ describe('Merge tests', () => {
       { id: r2.id, type: "Reservation" },
       { id: r3.id, type: "Reservation" }])
     expect(customerUpd.created).toEqual("2023-02-20")
+    expect(customerUpd.latestCreated).toEqual("2024-07-15")
   })
 });

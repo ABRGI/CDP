@@ -774,6 +774,12 @@ resource "google_bigquery_table" "customers_table" {
         ],
         "description" : "Vouchers the customer has used"
       },
+      {
+        "name" : "latestCreated",
+        "type" : "TIMESTAMP",
+        "mode" : "NULLABLE",
+        "description" : "Time of latest reservation (taken from reservation)"
+      },
   ])
 }
 

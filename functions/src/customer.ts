@@ -63,6 +63,8 @@ export type Customer = {
 
   created?: string
   updated: string
+
+  latestCreated?: string
 }
 
 /**

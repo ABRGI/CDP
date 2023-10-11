@@ -883,6 +883,7 @@ WITH segments AS (
   totalBusinessBookings,
   bookingNightsCounts,
   created,
+  latestCreated,
   level,
   ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
@@ -941,6 +942,7 @@ SELECT id, email,
   includesGroups,
   single,
   created,
+  latestCreated,
   age,
   totalBookings,
   leadTimeDays,

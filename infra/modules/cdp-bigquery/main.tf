@@ -885,6 +885,7 @@ WITH segments AS (
   created,
   latestCreated,
   level,
+  DATE_DIFF(CURRENT_DATE(), EXTRACT(DATE FROM latestCreated), MONTH) as monthsSinceReservation,
   ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
 SELECT id, email,
@@ -953,7 +954,8 @@ SELECT id, email,
   bookingNightsCounts,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
   voucherCategory,
-  cancellationPercentage
+  cancellationPercentage,
+  CAST(monthsSinceReservation AS NUMERIC) as monthsSinceReservation
   FROM segments
 EOF
     use_legacy_sql = false

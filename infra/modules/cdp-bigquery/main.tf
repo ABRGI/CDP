@@ -524,7 +524,7 @@ resource "google_bigquery_table" "customers_table" {
         "name" : "level",
         "type" : "STRING",
         "mode" : "REQUIRED",
-        "description" : "'VIP' | 'Loyal' | 'Passive' | 'Risk' | 'New' | 'Guest'"
+        "description" : "'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'"
       },
       {
         "name" : "lifetimeSpend",
@@ -779,6 +779,24 @@ resource "google_bigquery_table" "customers_table" {
         "type" : "TIMESTAMP",
         "mode" : "NULLABLE",
         "description" : "Time of latest reservation (taken from reservation)"
+      },
+      {
+        "name" : "levelHistory",
+        "mode" : "REPEATED",
+        "type" : "RECORD",
+        "fields" : [
+          {
+            "name" : "timestamp",
+            "mode" : "REQUIRED",
+            "type" : "TIMESTAMP"
+          },
+          {
+            "name" : "level",
+            "mode" : "REQUIRED",
+            "type" : "STRING"
+          }
+        ],
+        "description" : "Level history of customer ('VIP' | 'Stable' | 'Developing' | 'New' | 'Guest')"
       },
   ])
 }

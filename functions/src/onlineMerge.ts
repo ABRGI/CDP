@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { BigQuerySimple } from "./bigquery"
 import { Customer, calculateCustomerMatchPoints, hasCustomerGuest, hasCustomerReservation, hasCustomerReservationGuest } from "./customer"
-import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
+import { Guest, addGuestToCustomer, createCustomerFromGuest, fillInCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { CustomerMerger } from "./merge"
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 import { timestampFormat } from "./utils"
@@ -116,7 +116,11 @@ export class OnlineMerger {
     }
     if (customer) {
       for (const g of guests) {
-        customer = await this.onlineAddGuestToCustomer(customer, g)
+        if (g.guestIndex === 0) {
+          customer = fillInCustomerFromGuest(customer, g)
+        } else {
+          customer = await this.onlineAddGuestToCustomer(customer, g)
+        }
         status.newGuests++
       }
       this.merger.addCustomerToIndices(customer)
@@ -295,7 +299,7 @@ export class OnlineMerger {
   }
 
   /**
-   * Merges given guest to customer and reconstructs profile ig guest is already part of the profile
+   * Merges given guest to customer and reconstructs profile if guest is already part of the profile
    * @param customer
    * @param r
    * @param g

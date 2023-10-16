@@ -200,7 +200,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       updated: r.updated,
       created: r.created,
-      latestCreated: r.created
+      latestCreated: r.created,
+      levelHistory: [{ timestamp: r.created, level: 'New' }]
     }
   }
 }
@@ -231,6 +232,17 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
   const avgPeoplePerBooking = RoundToTwo((c.bookingPeopleCounts.reduce((t, c) => t + c, 0) + 1) / (c.totalBookings + 1))
 
+  let level = c.level === 'Guest' ? 'New' : c.level
+  if (c.totalBookings + 1 > 1) {
+    level = 'Developing'
+  }
+  if (c.totalBookings + 1 > 2) {
+    level = 'Stable'
+  }
+  if (c.totalBookings + 1 > 4) {
+    level = 'VIP'
+  }
+
   return {
     ...c,
     email: nc.email || c.email,
@@ -240,7 +252,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
     memberId: c.memberId || nc.memberId,
     isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
-    level: c.level === 'Guest' ? 'New' : c.level,
+    level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
 
     bookingNightsCounts: c.bookingNightsCounts.concat(nc.bookingNightsCounts),
@@ -289,6 +301,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     updated: maxTimestamp(c.updated, nc.updated)!,
     created: minTimestamp(c.created, nc.created),
-    latestCreated: maxTimestamp(c.created, nc.created)
+    latestCreated: maxTimestamp(c.created, nc.created),
+    levelHistory: c.levelHistory.concat({ timestamp: r.created, level })
   }
 }

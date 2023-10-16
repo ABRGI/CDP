@@ -1,6 +1,6 @@
 import { Customer, calculateCustomerMatchPoints } from "./customer"
 import { TreeDictionary } from "./dictionary"
-import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
+import { Guest, addGuestToCustomer, createCustomerFromGuest, fillInCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { MinimalReservation, Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 
 
@@ -56,6 +56,13 @@ export class CustomerMerger {
    */
   addGuest(g: Guest) {
     if (g.guestIndex <= 0) {
+      const reservationCustomerId = this.reservationCustomerId[g.reservationId]
+      if (reservationCustomerId) {
+        const customer = this.customers[reservationCustomerId]
+        if (customer) {
+          this.customers[reservationCustomerId] = fillInCustomerFromGuest(customer, g)
+        }
+      }
       return
     }
 

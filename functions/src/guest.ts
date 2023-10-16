@@ -118,7 +118,9 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       updated: r.updated,
 
-      voucherKeys: []
+      voucherKeys: [],
+
+      levelHistory: [{ timestamp: r.created, level: 'Guest' }]
     }
   }
   return
@@ -186,5 +188,20 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
     bookingPeopleCounts,
     avgPeoplePerBooking: RoundToTwo(c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length),
     profileIds: [...c.profileIds, { id: g.id, type: "ReservationGuest" }]
+  }
+}
+
+/**
+ * Uses guest information to fill customer data
+ * @param c Existing customer
+ * @param g Guest stay
+ */
+export const fillInCustomerFromGuest = (c: Customer, g: Guest): Customer => {
+  return {
+    ...c,
+    dateOfBirth: c.dateOfBirth || g.dateOfBirth,
+    email: c.email || g.email,
+    marketingPermission: c.marketingPermission || g.marketingPermission,
+    phoneNumber: c.phoneNumber || g.mobile
   }
 }

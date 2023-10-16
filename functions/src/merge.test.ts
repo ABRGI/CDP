@@ -143,6 +143,7 @@ describe('Merge tests', () => {
     expect(gc.totalBookingsAsGuest).toBe(1)
     expect(gc.totalHotelBookingCounts).toEqual([{ hotel: 'HKI2', count: 1 }])
     expect(gc.level).toEqual('New')
+    expect(gc.levelHistory).toEqual([{ timestamp: parent.created, level: 'Guest' }, { timestamp: reservation.created, level: 'New' }])
   })
 
   test('Should not update guest for booking customer', () => {
@@ -294,5 +295,34 @@ describe('Merge tests', () => {
       { id: r3.id, type: "Reservation" }])
     expect(customerUpd.created).toEqual("2023-02-20")
     expect(customerUpd.latestCreated).toEqual("2024-07-15")
+    expect(customerUpd.level).toBe("Stable")
+    expect(customerUpd.levelHistory).toEqual([
+      { timestamp: r1.created, level: 'New' },
+      { timestamp: r2.created, level: 'Developing' },
+      { timestamp: r3.created, level: 'Stable' }
+    ])
+  })
+
+  test('Test filling DOB from guest', () => {
+    const reservation = generateNewReservation()
+    const merger = new CustomerMerger()
+    reservation.customerDateOfBirth = undefined
+    merger.addReservation(reservation)
+
+    let customers = merger.getCustomers()
+    let customer = customers[0]
+
+    expect(customer.dateOfBirth).toBeUndefined()
+
+    const guest = generateNewGuest(reservation.id)
+    guest.guestIndex = 0
+    guest.dateOfBirth = dayjs().subtract(20, 'year').format("YYYY-MM-DD")
+    merger.addGuest(guest)
+
+    customers = merger.getCustomers()
+    customer = customers[0]
+
+    expect(customer.dateOfBirth).toBeDefined()
+    expect(customer.dateOfBirth).toEqual(guest.dateOfBirth)
   })
 });

@@ -15,7 +15,7 @@ export type Customer = {
   isoCountryCode?: string                                      // ISO country code, e.g. FI
   memberId?: number
   includesChildren: boolean
-  level: 'VIP' | 'Loyal' | 'Passive' | 'Risk' | 'New' | 'Guest'
+  level: 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'
   lifetimeSpend: number                                 // In euros
 
   bookingNightsCounts: number[]
@@ -64,7 +64,9 @@ export type Customer = {
   created?: string
   updated: string
 
-  latestCreated?: string
+  latestCreated?: string,
+
+  levelHistory: { timestamp: string, level: string }[]
 }
 
 /**

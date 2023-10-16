@@ -302,6 +302,6 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     updated: maxTimestamp(c.updated, nc.updated)!,
     created: minTimestamp(c.created, nc.created),
     latestCreated: maxTimestamp(c.created, nc.created),
-    levelHistory: c.levelHistory.concat({ timestamp: r.created, level })
+    levelHistory: level !== c.level ? c.levelHistory.concat({ timestamp: r.created, level }) : c.levelHistory
   }
 }

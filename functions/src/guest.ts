@@ -71,7 +71,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       phoneNumber: g.mobile,
       dateOfBirth: g.dateOfBirth,
       isoCountryCode: g.isoCountryCode,
-      includesChildren: dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
+      includesChildren: typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false,
       level: 'Guest',
       lifetimeSpend: 0,
 
@@ -179,7 +179,7 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
     }
     return count
   })
-  const isChild = dayjs().diff(dayjs(g.dateOfBirth), "years") < 18
+  const isChild = typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false
   return {
     ...c,
     totalGroupBookings: c.totalGroupBookings + (g.roomAlias > 1 ? 1 : 0),

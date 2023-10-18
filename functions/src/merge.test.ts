@@ -114,6 +114,33 @@ describe('Merge tests', () => {
     expect(guestCustomer.level).toEqual('Guest')
   })
 
+  test('Guest with missing date of birth', () => {
+    const reservation = generateNewReservation()
+    const merger = new CustomerMerger()
+    merger.addReservation(reservation)
+
+    const guest = generateNewGuest(reservation.id)
+    guest.dateOfBirth = undefined
+    merger.addGuest(guest)
+
+    const customers = merger.getCustomers()
+    expect(customers.length).toBe(2)
+    const customer = customers[0]
+
+    expect(customer.includesChildren).toBe(false)
+    expect(customer.totalChildrenBookings).toBe(0)
+    expect(customer.bookingPeopleCounts).toEqual([2])
+
+    const guestCustomer = customers[1]
+    expect(guestCustomer.includesChildren).toBe(false)
+    expect(guestCustomer.totalBookingsAsGuest).toBe(1)
+    expect(guestCustomer.latestCheckInDate).toEqual(customer.latestCheckInDate)
+    expect(guestCustomer.latestCheckOutDate).toEqual(customer.latestCheckOutDate)
+    expect(guestCustomer.latestHotel).toEqual(customer.latestHotel)
+    expect(guestCustomer.lifetimeSpend).toBeCloseTo(0)
+    expect(guestCustomer.level).toEqual('Guest')
+  })
+
   test('From guest to customer', () => {
     const merger = new CustomerMerger()
 

@@ -895,6 +895,7 @@ WITH segments AS (
   IF(marketingPermission, 'Yes', 'No') as marketingPermission,
   IF(dateOfBirth IS NULL, 'No', 'Yes') as hasDateOfBirth,
   IF(ssn IS NULL, 'No', 'Yes') as hasSsn,
+  IF(memberId IS NULL, 'No', 'Yes') as isMember,
   avgBookingFrequencyDays,
   isoCountryCode,
   avgNightsPerBooking,
@@ -903,6 +904,7 @@ WITH segments AS (
   created,
   latestCreated,
   level,
+  DATE_DIFF(CURRENT_DATE(), latestCheckInDate, DAY) as daysSinceCheckIn,
   DATE_DIFF(CURRENT_DATE(), EXTRACT(DATE FROM latestCreated), MONTH) as monthsSinceReservation,
   ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
@@ -919,7 +921,8 @@ SELECT id, email,
     WHEN age > 29 AND age <= 39 THEN '30-39'
     WHEN age > 39 AND age <= 49 THEN '40-49'
     WHEN age > 49 AND age <= 59 THEN '50-59'
-    ELSE '60+'
+    WHEN age > 59 THEN '60+'
+    ELSE 'Missing'
     END
     AS ageClass,
   CASE
@@ -955,7 +958,18 @@ SELECT id, email,
   latestCheckInDate,
   hasDateOfBirth,
   hasSsn,
-  level,
+  isMember,
+  CASE
+    WHEN daysSinceCheckIn > 730 THEN 'Passive'
+    WHEN daysSinceCheckIn > 365 THEN 'Passive Risk'
+    ELSE level
+    END
+    AS level,
+  CASE
+    WHEN daysSinceCheckIn < 90 THEN 'Yes'
+    ELSE 'No'
+    END
+    AS active,
   marketingPermission,
   includesChildren,
   includesGroups,

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { createHashId, getRandomFrom, getRandomInt } from "../utils";
+import { createHashId, getRandomFrom, getRandomInt, timestampFormat } from "../utils";
 import { v4 as uuidv4 } from 'uuid'
 import { Reservation } from "../reservation";
 import { Guest } from "../guest";
@@ -95,7 +95,6 @@ export const generateNewReservation = (): Reservation => {
     confirmed: leadDate.add(getRandomInt(0, leadDays - 1)).format("YYYY-MM-DD"),
     cancelled: false,
     isFullyRefunded: false,
-    pendingConfirmationSince: "",
     changeType: "",
     state: "CONFIRMED",
     notifyCustomer: false,
@@ -108,8 +107,11 @@ export const generateNewReservation = (): Reservation => {
     totalPaidExtraForOta: 0,
     breakfastsForAll: false,
     customerIsoCountryCode: "FIN",
+    memberId: 1234,
     reservationExtraInfo: {},
-    hotel: getRandomFrom(["HKI2", "HKI3", "JYL1", "TRE2", "POR2", "VSA2", "TKU1", "TKU2"])
+    hotel: getRandomFrom(["HKI2", "HKI3", "JYL1", "TRE2", "POR2", "VSA2", "TKU1", "TKU2"]),
+    updated: dayjs().format(timestampFormat),
+    voucherKeys: []
   }
 }
 

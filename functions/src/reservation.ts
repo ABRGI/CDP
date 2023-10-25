@@ -1,7 +1,14 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
+import { RoundToTwo, calculateDaysBetween, maxTimestamp, minTimestamp } from "./utils"
 import { mergeHotelCounts } from "./hotel"
+import { Voucher } from "./voucher"
+
+export type WaitingReservation = {
+  id: number
+  guestIds: number[]
+  updated: string
+}
 
 export type Reservation = {
   id: number,
@@ -52,14 +59,19 @@ export type Reservation = {
   reservationExtraInfo: any,        // JSON
   customerSignatureId?: string,     // '', 'xxxxx.png'
   hotel: string                     // 'HKI2', 'TKU1', 'TKU2', 'VSA2', 'HKI3', 'TRE2', 'POR2', 'JYL1', 'VSA1'
+  updated: string                   // Timestamp of latest update
+  voucherKeys: string[]
 }
 
 export type MinimalReservation = {
+  id: number,
   checkIn: string,       // '2020-09-12 13:00:00'
   checkOut: string,      // '2020-09-13 09:00:00'
   hotel: string,
   state: string,
-  marketingPermission: boolean
+  marketingPermission: boolean,
+  updated: string
+  created: string
 }
 
 const reservationInt = new Set([
@@ -73,7 +85,12 @@ const reservationFloats = new Set([
 
 const reservationBools = new Set([
   "cancelled", "notifyCustomer", "isOverrided",
-  "marketingPermission", "breakfastsForAll"
+  "marketingPermission", "breakfastsForAll",
+  "isFullyRefunded"
+])
+
+const timestampsWithoutTimezone = new Set([
+  "created", "pendingConfirmationSince", "checkIn", "checkOut", "confirmed"
 ])
 
 export const mapReservationValue = (props: { header: string, value: string }): boolean | string | number | undefined | object => {
@@ -88,6 +105,9 @@ export const mapReservationValue = (props: { header: string, value: string }): b
       return {}
     }
   }
+  if (timestampsWithoutTimezone.has(props.header)) {
+    return dayjs(value).format('YYYY-MM-DDTHH:mm:ss')
+  }
   if (reservationInt.has(props.header)) {
     return parseInt(value, 10)
   }
@@ -95,7 +115,7 @@ export const mapReservationValue = (props: { header: string, value: string }): b
     return parseFloat(value)
   }
   if (reservationBools.has(props.header)) {
-    return value === "TRUE"
+    return value === "TRUE" || value === "t" || value === "T" ? true : false
   }
   if (props.header === "customerMobile") {
     return value.replace(/ /g, "").replace(/ /g, "").replace(/^0/, "+358")
@@ -117,7 +137,7 @@ export const isMatch = (r1: Reservation, r2: Reservation): boolean => {
 export const createCustomerFromReservation = (r: Reservation): Customer | undefined => {
   if (r.customerSsn || r.customerEmailReal || r.customerMobile) {
     const bookingTotalNights = Math.round(dayjs(r.checkOut).diff(r.checkIn, "hours") / 24)
-    const leadTimeDays = RoundToTwo(dayjs(r.checkIn).diff(r.created, "hours") / 24)
+    const leadTimeDays = RoundToTwo(Math.max(0, dayjs(r.checkIn).diff(r.created, "hours") / 24))
     const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
     return {
       id: `R-${r.id}`,
@@ -127,6 +147,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       lastName: r.customerLastName,
       phoneNumber: r.customerMobile,
       dateOfBirth: r.customerDateOfBirth,
+      memberId: r.memberId,
       isoCountryCode: r.customerIsoCountryCode,
       includesChildren: false,
       level: 'New',
@@ -158,6 +179,9 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookingsAsGuest: 0,
       totalBookings: 1,
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
+      totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
+      totalGroupBookings: 0,
+      totalChildrenBookings: 0,
       blocked: r.state === "BLOCKED",
 
       totalWeekDays: weekDays,
@@ -165,7 +189,19 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
 
       totalHotelBookingCounts: [{ hotel: r.hotel, count: 1 }],
 
-      marketingPermission: r.marketingPermission
+      marketingPermission: r.marketingPermission,
+
+      profileIds: [{ id: r.id, type: "Reservation" }],
+
+      city: r.customerCity,
+      streetAddress: r.customerAddress,
+
+      voucherKeys: r.voucherKeys.map(vk => ({ reservationId: r.id, key: vk })),
+
+      updated: r.updated,
+      created: r.created,
+      latestCreated: r.created,
+      levelHistory: [{ timestamp: r.created, level: 'New' }]
     }
   }
 }
@@ -181,9 +217,13 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
   if (!nc) {
     return c
   }
-  const avgBookingsPerYear = RoundToTwo((c.totalBookings + 1) / (dayjs(r.checkIn).diff(c.firstCheckInDate, "years") + 1))
+  const firstCheckInDate = nc.firstCheckInDate.localeCompare(c.firstCheckInDate) < 0 ? nc.firstCheckInDate : c.firstCheckInDate
+  const avgBookingsPerYear = RoundToTwo((c.totalBookings + 1) / (dayjs(r.checkIn).diff(firstCheckInDate, "years") + 1))
 
-  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(c.firstCheckInDate, "days") / c.totalBookings)
+  if (!avgBookingsPerYear) {
+    throw Error(JSON.stringify(c, null, 2))
+  }
+  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(firstCheckInDate, "days") / c.totalBookings)
 
   const avgNightsPerBooking = RoundToTwo((c.avgNightsPerBooking * c.totalBookings + nc.avgNightsPerBooking) / (c.totalBookings + 1))
 
@@ -192,6 +232,17 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
   const avgPeoplePerBooking = RoundToTwo((c.bookingPeopleCounts.reduce((t, c) => t + c, 0) + 1) / (c.totalBookings + 1))
 
+  let level = c.level === 'Guest' ? 'New' : c.level
+  if (c.totalBookings + 1 > 1) {
+    level = 'Developing'
+  }
+  if (c.totalBookings + 1 > 2) {
+    level = 'Stable'
+  }
+  if (c.totalBookings + 1 > 4) {
+    level = 'VIP'
+  }
+
   return {
     ...c,
     email: nc.email || c.email,
@@ -199,8 +250,9 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     lastName: nc.lastName || c.lastName,
     phoneNumber: nc.phoneNumber || c.phoneNumber,
     dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
-    isoCountryCode: c.isoCountryCode || nc.dateOfBirth,
-    level: c.level === 'Guest' ? 'New' : c.level,
+    memberId: c.memberId || nc.memberId,
+    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
+    level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
 
     bookingNightsCounts: c.bookingNightsCounts.concat(nc.bookingNightsCounts),
@@ -214,7 +266,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     avgPeoplePerBooking,
     avgLeadTimeDays,
 
-    firstCheckInDate: nc.firstCheckInDate.localeCompare(c.firstCheckInDate) < 0 ? nc.firstCheckInDate : c.firstCheckInDate,
+    firstCheckInDate,
     latestCheckInDate: nc.latestCheckInDate.localeCompare(c.latestCheckInDate) > 0 ? nc.latestCheckInDate : c.latestCheckInDate,
     latestCheckOutDate: nc.latestCheckOutDate.localeCompare(c.latestCheckOutDate) > 0 ? nc.latestCheckOutDate : c.latestCheckOutDate,
     latestHotel: nc.latestCheckInDate.localeCompare(c.latestCheckInDate) > 0 ? nc.latestHotel : c.latestHotel,
@@ -223,6 +275,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalExpediaBookings: c.totalExpediaBookings + nc.totalExpediaBookings,
     totalNelsonBookings: c.totalNelsonBookings + nc.totalNelsonBookings,
     totalMobileAppBookings: c.totalMobileAppBookings + nc.totalMobileAppBookings,
+    totalChildrenBookings: c.totalChildrenBookings + nc.totalChildrenBookings,
 
     totalLeisureBookings: c.totalLeisureBookings + nc.totalLeisureBookings,
     totalBusinessBookings: c.totalBookingComBookings + nc.totalBusinessBookings,
@@ -230,6 +283,8 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalBookingsAsGuest: c.totalBookingsAsGuest,
     totalBookings: c.totalBookings + 1,
     totalBookingCancellations: c.totalBookingCancellations + nc.totalBookingCancellations,
+    totalBookingsPending: c.totalBookingsPending + nc.totalBookingsPending,
+    totalGroupBookings: c.totalGroupBookings + nc.totalGroupBookings,
 
     blocked: c.blocked || nc.blocked,
 
@@ -238,6 +293,15 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
 
     totalHotelBookingCounts: mergeHotelCounts(c.totalHotelBookingCounts, nc.totalHotelBookingCounts),
 
-    marketingPermission: nc.marketingPermission
+    marketingPermission: nc.marketingPermission,
+
+    profileIds: [...c.profileIds, ...nc.profileIds],
+
+    voucherKeys: [...c.voucherKeys, ...nc.voucherKeys],
+
+    updated: maxTimestamp(c.updated, nc.updated)!,
+    created: minTimestamp(c.created, nc.created),
+    latestCreated: maxTimestamp(c.created, nc.created),
+    levelHistory: level !== c.level ? c.levelHistory.concat({ timestamp: r.created, level }) : c.levelHistory
   }
 }

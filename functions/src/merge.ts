@@ -1,6 +1,6 @@
 import { Customer, calculateCustomerMatchPoints } from "./customer"
 import { TreeDictionary } from "./dictionary"
-import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
+import { Guest, addGuestToCustomer, createCustomerFromGuest, fillInCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { MinimalReservation, Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
 
 
@@ -27,11 +27,14 @@ export class CustomerMerger {
    */
   addReservation(r: Reservation) {
     this.reservations[r.id] = {
+      id: r.id,
       checkIn: r.checkIn,
       checkOut: r.checkOut,
       hotel: r.hotel,
       state: r.state,
-      marketingPermission: r.marketingPermission
+      marketingPermission: r.marketingPermission,
+      updated: r.updated,
+      created: r.created
     }
     const customerId = this.getExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
       r.customerFirstName, r.customerLastName)
@@ -52,6 +55,17 @@ export class CustomerMerger {
    * @param g Guest to add
    */
   addGuest(g: Guest) {
+    if (g.guestIndex <= 0) {
+      const reservationCustomerId = this.reservationCustomerId[g.reservationId]
+      if (reservationCustomerId) {
+        const customer = this.customers[reservationCustomerId]
+        if (customer) {
+          this.customers[reservationCustomerId] = fillInCustomerFromGuest(customer, g)
+        }
+      }
+      return
+    }
+
     // Handling the guest customer profile, it is only added if such customer does not exist
     const customerId = this.getExistingCustomer(g.ssn, g.email, g.mobile)
     const r = this.reservations[g.reservationId]
@@ -60,6 +74,9 @@ export class CustomerMerger {
       if (customer) {
         this.addCustomerToIndices(customer)
       }
+    } else if (customerId) {
+      const customer = this.customers[customerId]
+      this.customers[customerId] = mergeGuestToCustomer(customer, r, g)
     }
 
     // Add the guest information to the booking customer
@@ -77,6 +94,24 @@ export class CustomerMerger {
    * @param ssn Social Security Number
    * @param email email
    * @param phoneNumber phone number
+   * @param firstName first name
+   * @param lastName last name
+   * @returns customer ID if one is found, undefined otherwise
+   */
+  findExistingCustomer(ssn?: string, email?: string, phoneNumber?: string, firstName?: string, lastName?: string): Customer | undefined {
+    const id = this.getExistingCustomer(ssn, email, phoneNumber, firstName, lastName)
+    if (id) {
+      return this.customers[id]
+    }
+  }
+
+  /**
+   * Check if there is customer with any of the given parameters
+   * @param ssn Social Security Number
+   * @param email email
+   * @param phoneNumber phone number
+   * @param firstName first name
+   * @param lastName last name
    * @returns customer ID if one is found, undefined otherwise
    */
   getExistingCustomer(ssn?: string, email?: string, phoneNumber?: string, firstName?: string, lastName?: string): string | undefined {
@@ -131,7 +166,7 @@ export class CustomerMerger {
    * Adds customer to the indices
    * @param customer Customer to add
    */
-  private addCustomerToIndices(customer: Customer): void {
+  addCustomerToIndices(customer: Customer): void {
     this.customers[customer.id] = customer
     if (customer.ssn) {
       this.ssnIds[customer.ssn] = customer.id

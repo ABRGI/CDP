@@ -1,8 +1,7 @@
 import dayjs from "dayjs"
 import { Customer } from "./customer"
-import { MinimalReservation, Reservation } from "./reservation"
-import { RoundToTwo, calculateDaysBetween, createHashId } from "./utils"
-import { mergeHotelCounts } from "./hotel"
+import { MinimalReservation } from "./reservation"
+import { RoundToTwo, calculateDaysBetween, maxTimestamp } from "./utils"
 
 export type Guest = {
   id: number,
@@ -72,7 +71,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       phoneNumber: g.mobile,
       dateOfBirth: g.dateOfBirth,
       isoCountryCode: g.isoCountryCode,
-      includesChildren: dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
+      includesChildren: typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false,
       level: 'Guest',
       lifetimeSpend: 0,
 
@@ -102,6 +101,9 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       totalBookingsAsGuest: 1,
       totalBookings: 0,
       totalBookingCancellations: 0,
+      totalBookingsPending: 0,
+      totalGroupBookings: 0,
+      totalChildrenBookings: 0,
 
       blocked: r.state === "BLOCKED",
 
@@ -110,7 +112,15 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       totalHotelBookingCounts: [],
 
-      marketingPermission: r.marketingPermission
+      marketingPermission: r.marketingPermission,
+
+      profileIds: [{ id: r.id, type: "Reservation" }],
+
+      updated: r.updated,
+
+      voucherKeys: [],
+
+      levelHistory: [{ timestamp: r.created, level: 'Guest' }]
     }
   }
   return
@@ -123,7 +133,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
  * @param g Guest information
  * @returns
  */
-export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Customer => {
+export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Guest): Customer => {
   const nc = createCustomerFromGuest(r, g)
   if (!nc) {
     return c
@@ -148,7 +158,11 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
     totalWeekDays: weekDays,
     totalWeekendDays: weekendDays,
 
-    marketingPermission: nc.marketingPermission
+    marketingPermission: nc.marketingPermission,
+
+    profileIds: [...c.profileIds, { id: g.id, type: "Guest" }],
+
+    updated: maxTimestamp(c.updated, r.updated)!
   }
 }
 
@@ -158,12 +172,36 @@ export const mergeGuestToCustomer = (c: Customer, r: Reservation, g: Guest): Cus
  * @param g Guest stay
  */
 export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
-  const bookingPeopleCounts = c.bookingPeopleCounts.map((count, index) =>
-    index < c.bookingPeopleCounts.length - 1 ? count : count + 1)
+
+  const bookingPeopleCounts = c.bookingPeopleCounts.map((count, index) => {
+    if (g.reservationId === c.profileIds[index].id && c.profileIds[index].type === "Reservation") {
+      return count + 1
+    }
+    return count
+  })
+  const isChild = typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false
   return {
     ...c,
-    includesChildren: c.includesChildren || dayjs().diff(dayjs(g.dateOfBirth), "years") < 18,
+    totalGroupBookings: c.totalGroupBookings + (g.roomAlias > 1 ? 1 : 0),
+    totalChildrenBookings: c.totalChildrenBookings + (isChild ? 1 : 0),
+    includesChildren: c.includesChildren || isChild,
     bookingPeopleCounts,
     avgPeoplePerBooking: RoundToTwo(c.bookingPeopleCounts.reduce((t, c) => t + c, 0) / c.bookingPeopleCounts.length),
+    profileIds: [...c.profileIds, { id: g.id, type: "ReservationGuest" }]
+  }
+}
+
+/**
+ * Uses guest information to fill customer data
+ * @param c Existing customer
+ * @param g Guest stay
+ */
+export const fillInCustomerFromGuest = (c: Customer, g: Guest): Customer => {
+  return {
+    ...c,
+    dateOfBirth: c.dateOfBirth || g.dateOfBirth,
+    email: c.email || g.email,
+    marketingPermission: c.marketingPermission || g.marketingPermission,
+    phoneNumber: c.phoneNumber || g.mobile
   }
 }

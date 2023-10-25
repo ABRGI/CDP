@@ -1,5 +1,8 @@
 .DS_store
+infra/kiva
 functions/node_modules/
 functions/dist/
 functions/coverage
 functions/test-data/*sample*
+scripts/*.csv
+scripts/data

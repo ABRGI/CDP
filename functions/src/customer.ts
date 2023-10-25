@@ -13,8 +13,9 @@ export type Customer = {
   streetAddress?: string
   city?: string
   isoCountryCode?: string                                      // ISO country code, e.g. FI
+  memberId?: number
   includesChildren: boolean
-  level: 'VIP' | 'Loyal' | 'Passive' | 'Risk' | 'New' | 'Guest'
+  level: 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'
   lifetimeSpend: number                                 // In euros
 
   bookingNightsCounts: number[]
@@ -39,10 +40,13 @@ export type Customer = {
 
   totalLeisureBookings: number
   totalBusinessBookings: number
+  totalGroupBookings: number
+  totalChildrenBookings: number
 
   totalBookingsAsGuest: number
   totalBookings: number
   totalBookingCancellations: number
+  totalBookingsPending: number
 
   blocked: boolean
 
@@ -53,7 +57,16 @@ export type Customer = {
 
   marketingPermission: boolean
 
-  reservationIds: number[]
+  profileIds: { id: number, type: 'Reservation' | 'Guest' | 'ReservationGuest' }[]
+
+  voucherKeys: { reservationId: number, key: string }[]
+
+  created?: string
+  updated: string
+
+  latestCreated?: string,
+
+  levelHistory: { timestamp: string, level: string }[]
 }
 
 /**
@@ -82,4 +95,35 @@ export const calculateCustomerMatchPoints = (customer: Customer, ssn?: string, e
     total += distanceMoreThan(`${customer.firstName} ${customer.lastName}`, `${firstName} ${lastName}`, 1) ? -1 : 1
   }
   return total
+}
+
+
+/**
+ * Returns true if customer has given reservation
+ * @param customer Customer to search for
+ * @param reservationId Reservation ID to check
+ * @returns
+ */
+export const hasCustomerReservation = (customer: Customer, reservationId: number): boolean => {
+  return customer.profileIds.find(pid => pid.id === reservationId && pid.type === "Reservation") !== undefined
+}
+
+/**
+ * Returns true if customer has given guest
+ * @param customer Customer to search for
+ * @param guestId Guest ID to check
+ * @returns
+ */
+export const hasCustomerGuest = (customer: Customer, guestId: number): boolean => {
+  return customer.profileIds.find(pid => pid.id === guestId && pid.type === "Guest") !== undefined
+}
+
+/**
+ * Returns true if customer has given guest in some reservation
+ * @param customer Customer to search for
+ * @param guestId Guest ID to check
+ * @returns
+ */
+export const hasCustomerReservationGuest = (customer: Customer, guestId: number): boolean => {
+  return customer.profileIds.find(pid => pid.id === guestId && pid.type === "ReservationGuest") !== undefined
 }

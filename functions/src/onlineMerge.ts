@@ -1,8 +1,10 @@
+import dayjs from "dayjs"
 import { BigQuerySimple } from "./bigquery"
-import { Customer, calculateCustomerMatchPoints } from "./customer"
-import { Guest, addGuestToCustomer, createCustomerFromGuest, mergeGuestToCustomer } from "./guest"
+import { Customer, calculateCustomerMatchPoints, hasCustomerGuest, hasCustomerReservation, hasCustomerReservationGuest } from "./customer"
+import { Guest, addGuestToCustomer, createCustomerFromGuest, fillInCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { CustomerMerger } from "./merge"
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
+import { timestampFormat } from "./utils"
 
 /**
  * Online merging status
@@ -54,13 +56,19 @@ export class OnlineMerger {
       newProfiles: 0,
       updatedProfiles: 0
     }
-    const latest = await this.bigQuery.queryOne<{ reservationId: number }>(this.datasetId, `
-      SELECT MAX(reservationId) as reservationId  FROM customers, UNNEST(reservationIds) as reservationId
+    const latest = await this.bigQuery.queryOne<{ updated: string }>(this.datasetId, `
+      SELECT MAX(updated) as updated  FROM customers
     `)
-    const latestReservationId = latest.reservationId || 0
+    const latestUpdate = latest.updated ? dayjs(latest.updated).format(timestampFormat) : dayjs().year(1970).format(timestampFormat)
 
-    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id>${latestReservationId}`)
-    const newGuests = await this.bigQuery.query<Guest>(this.datasetId, `SELECT * FROM guests WHERE reservationId>${latestReservationId} AND guestIndex > 0`)
+    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC`)
+    if (!newReservations.length) {
+      return status
+    }
+    const minReservationId = newReservations.reduce((all, curr) => Math.min(all, curr.id), newReservations[0].id)
+    const maxReservationId = newReservations.reduce((all, curr) => Math.max(all, curr.id), newReservations[0].id)
+
+    const newGuests = await this.bigQuery.query<Guest>(this.datasetId, `SELECT * FROM guests WHERE reservationId>=${minReservationId} AND reservationId <= ${maxReservationId} AND guestIndex > 0`)
     for (const reservation of newReservations) {
       const guests = newGuests.filter(g => g.reservationId === reservation.id)
       const addStatus = await this.addReservation(reservation, guests)
@@ -94,7 +102,7 @@ export class OnlineMerger {
     let customer = await this.findExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
       r.customerFirstName, r.customerLastName)
     if (customer) {
-      customer = mergeReservationToCustomer(customer, r)
+      customer = await this.onlineMergeReservationToCustomer(customer, r)
       if (!this.createdCustomerIds.has(customer.id)) {
         this.updatedCustomerIds.add(customer.id)
       }
@@ -108,13 +116,17 @@ export class OnlineMerger {
     }
     if (customer) {
       for (const g of guests) {
-        customer = addGuestToCustomer(customer, g)
+        if (g.guestIndex === 0) {
+          customer = fillInCustomerFromGuest(customer, g)
+        } else {
+          customer = await this.onlineAddGuestToCustomer(customer, g)
+        }
         status.newGuests++
       }
       this.merger.addCustomerToIndices(customer)
     }
     for (const g of guests) {
-      if (g.ssn !== r.customerSsn && g.email !== r.customerEmailReal && g.mobile !== r.customerMobile) {
+      if (g.ssn !== r.customerSsn && g.email !== r.customerEmailReal && g.mobile !== r.customerMobile && g.guestIndex > 0) {
         customer = await this.findExistingCustomer(g.ssn, g.email, g.mobile)
         if (!customer) {
           const customer = createCustomerFromGuest(r, g)
@@ -124,13 +136,11 @@ export class OnlineMerger {
             status.newProfiles++
           }
         } else {
-          customer = mergeGuestToCustomer(customer, r, g)
-          if (customer) {
-            this.merger.addCustomerToIndices(customer)
-            status.updatedProfiles++
-            if (!this.createdCustomerIds.has(customer.id)) {
-              this.updatedCustomerIds.add(customer.id)
-            }
+          customer = await this.onlineMergeGuestToCustomer(customer, r, g)
+          this.merger.addCustomerToIndices(customer)
+          status.updatedProfiles++
+          if (!this.createdCustomerIds.has(customer.id)) {
+            this.updatedCustomerIds.add(customer.id)
           }
         }
       }
@@ -261,5 +271,86 @@ export class OnlineMerger {
     for (const customer of customers) {
       this.merger.addCustomerToIndices(customer)
     }
+  }
+
+  /**
+   * Merges given reservation and reconstructs profile if reservation is already part of the profile
+   * @param customer Customer to merge to
+   * @param r Reservation to merge
+   * @returns
+   */
+  protected async onlineMergeReservationToCustomer(customer: Customer, r: Reservation): Promise<Customer> {
+    if (!hasCustomerReservation(customer, r.id)) {
+      return mergeReservationToCustomer(customer, r)
+    }
+    return await this.recreateCustomer(customer)
+  }
+
+  /**
+   * Adds given guest to customer and reconstructs profile if guest is already part of the profile
+   * @param customer
+   * @param g
+   * @returns
+   */
+  protected async onlineAddGuestToCustomer(customer: Customer, g: Guest): Promise<Customer> {
+    if (!hasCustomerReservationGuest(customer, g.id))
+      return addGuestToCustomer(customer, g)
+    return await this.recreateCustomer(customer)
+  }
+
+  /**
+   * Merges given guest to customer and reconstructs profile if guest is already part of the profile
+   * @param customer
+   * @param r
+   * @param g
+   * @returns
+   */
+  protected async onlineMergeGuestToCustomer(customer: Customer, r: Reservation, g: Guest): Promise<Customer> {
+    if (!hasCustomerGuest(customer, g.id)) {
+      return mergeGuestToCustomer(customer, r, g)
+    }
+    return await this.recreateCustomer(customer)
+  }
+
+  /**
+   * Recreates customer profile based on profile IDs
+   * @param customer Customer to recreate
+   */
+  protected async recreateCustomer(customer: Customer): Promise<Customer> {
+    const profileIds = customer.profileIds
+    let newCustomer: Customer | undefined
+
+    for (const pid of profileIds) {
+      if (pid.type === "Guest") {
+        const guest = await this.bigQuery.queryOne<Guest>(this.datasetId, `SELECT * FROM guests WHERE id=${pid.id}`)
+        const reservation = await this.bigQuery.queryOne<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id=${guest.reservationId}`)
+        if (guest && reservation) {
+          if (newCustomer) {
+            newCustomer = mergeGuestToCustomer(newCustomer, reservation, guest)
+          } else {
+            newCustomer = createCustomerFromGuest(reservation, guest)
+          }
+        }
+      }
+      else if (pid.type === "ReservationGuest" && newCustomer) {
+        const guest = await this.bigQuery.queryOne<Guest>(this.datasetId, `SELECT * FROM guests WHERE id=${pid.id}`)
+        if (guest) {
+          newCustomer = addGuestToCustomer(newCustomer, guest)
+        }
+      } else if (pid.type === "Reservation") {
+        const reservation = await this.bigQuery.queryOne<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id=${pid.id}`)
+        if (reservation) {
+          if (newCustomer) {
+            newCustomer = mergeReservationToCustomer(newCustomer, reservation)
+          } else {
+            newCustomer = createCustomerFromReservation(reservation)
+          }
+        }
+      }
+    }
+    if (!newCustomer) {
+      return customer
+    }
+    return newCustomer
   }
 }

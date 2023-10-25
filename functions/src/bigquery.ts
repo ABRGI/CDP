@@ -23,8 +23,8 @@ export class BigQuerySimple {
   async insert(datasetId: string, tableId: string, rows: Array<object>): Promise<void> {
     let start = 0;
     while (start < rows.length) {
-      await this.bigquery.dataset(datasetId).table(tableId).insert(rows.slice(start, start + 10000))
-      start += 10000
+      await this.bigquery.dataset(datasetId).table(tableId).insert(rows.slice(start, start + 3000))
+      start += 3000
     }
   }
 
@@ -59,11 +59,14 @@ export class BigQuerySimple {
    * @param query SQL query string
    * @returns
    */
-  async queryOne<T>(dateSetId: string, query: string): Promise<any> {
+  async queryOne<T>(dateSetId: string, query: string): Promise<T> {
     const rows = await this.bigquery.dataset(dateSetId).query({
       query
     })
-    return rows[0][0] as T
+    const mapped = rows[0].map((r: any) => {
+      return this.mapRow(r)
+    })
+    return mapped[0] as T
   }
 
   /**

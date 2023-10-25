@@ -25,3 +25,28 @@ function levenshteinDistance(s1, s2) {
   }
   return matrix[s2.length][s1.length]
 }
+
+
+function mapVoucherCategory(keys) {
+  if (!keys.length) {
+    return "No vouchers"
+  }
+  for (const key of keys) {
+    if (key.key.indexOf("NSN") !== -1) {
+      return "NSN"
+    }
+  }
+  return "Some"
+}
+
+function mapVoucherCategoryFromReservation(keys) {
+  if (!keys.length) {
+    return "No vouchers"
+  }
+  for (const key of keys) {
+    if (key.indexOf("NSN") !== -1) {
+      return "NSN"
+    }
+  }
+  return "Some"
+}

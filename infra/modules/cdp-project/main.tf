@@ -12,6 +12,13 @@ resource "google_project_service" "project_cloudscheduler_api_service" {
   disable_dependent_services = true
 }
 
+resource "google_project_service" "project_cloudfunctions_api_service" {
+  project = var.project_id
+  service = "cloudfunctions.googleapis.com"
+
+  disable_dependent_services = true
+}
+
 resource "google_service_account" "bigquery_service_account" {
   project      = var.project_id
   account_id   = "nelson"
@@ -41,3 +48,5 @@ resource "google_project_iam_member" "deployment_serviceaccount_user" {
   role    = "roles/iam.serviceAccountUser"
   member  = "serviceAccount:${google_service_account.deployment_service_account.email}"
 }
+
+

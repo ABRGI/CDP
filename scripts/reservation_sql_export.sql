@@ -1,5 +1,5 @@
 SET startDate.var = '2018-09-01';
-SET endDate.var = '2023-10-28';
+SET endDate.var = '2030-01-01';
 
 SELECT
     reservation.id as id,

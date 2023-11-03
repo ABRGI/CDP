@@ -22,9 +22,7 @@ export const fetchWaitingReservations = async () => {
       const reservation = generateNewReservation()
       reservation.id = waiting.id
       reservation.updated = dayjs(waiting.updated).format(timestampFormat)
-      const guests = waiting.guestIds.map(gid => ({ ...generateNewGuest(), id: gid, reservationId: reservation.id }))
       await bq.insertOne(datasetId, "reservations", reservation)
-      await bq.insert(datasetId, "guests", guests)
     }
   }
 }

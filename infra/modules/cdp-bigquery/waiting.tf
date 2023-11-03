@@ -13,11 +13,6 @@ resource "google_bigquery_table" "waiting_reservations_table" {
         "description" : "Reservation ID"
       },
       {
-        "name" : "guestIds",
-        "mode" : "REPEATED",
-        "type" : "INT64"
-      },
-      {
         "name" : "updated",
         "type" : "TIMESTAMP",
         "mode" : "REQUIRED",

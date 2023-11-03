@@ -12,25 +12,17 @@ const onlineMerger = new OnlineMerger(googleProjectId, datasetId, false)
 
 const NewReservationsSchema: JSONSchema7 = {
   type: "array",
-  required: ["id", "guestIds"],
+  required: ["reservation_id"],
   properties: {
-    id: {
+    reservation_id: {
       type: "number",
       minimum: 1
-    },
-    guestIds: {
-      type: "array",
-      items: {
-        type: "number",
-        minimum: 1
-      }
     }
   },
 };
 
 type NewReservation = {
-  id: number
-  guestIds: number[]
+  reservation_id: number
 }
 
 
@@ -47,7 +39,7 @@ http('NewReservationHook', async (req: Request, res: Response) => {
       res.status(400).send({ message: "Invalid body", errors: validationResult.errors })
     } else {
       const updated = dayjs().format(timestampFormat)
-      await bq.insert(datasetId, "waitingReservations", reservations.map(r => ({ ...r, updated })))
+      await bq.insert(datasetId, "waitingReservations", reservations.map(r => ({ id: r.reservation_id, updated })))
       res.status(200).end()
     }
   }

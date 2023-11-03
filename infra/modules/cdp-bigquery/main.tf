@@ -874,6 +874,7 @@ resource "google_bigquery_routine" "map_voucher_category_routine" {
 }
 
 resource "google_bigquery_table" "levels_table" {
+  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
   table_id            = "levels"
@@ -1018,6 +1019,7 @@ resource "google_bigquery_routine" "map_voucher_category_reservations_routine" {
 }
 
 resource "google_bigquery_table" "reservation_categories_table" {
+  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine]
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
   table_id            = "reservationCategories"

@@ -1,0 +1,66 @@
+name: build-and-deploy-staging
+run-name: ${{ github.actor }} is build and deploying new version to staging
+on:
+  push:
+    branches:
+      staging
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      source-directory: ./functions
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.13.0'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ${{env.source-directory}}
+
+      - name: Build
+        run: npm run build
+        working-directory: ${{env.source-directory}}
+
+      - name: Authenticate Cloud SDK
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{secrets.STAGING_GCP_DEPLOYMENT_KEY}}
+
+      - name: Deploy New Reservation Hook
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'NewReservationHook'
+          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.STAGING_GCP_DATASET_ID}}'
+
+      - name: Deploy Fetch Reservations
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'FetchReservations'
+          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
+          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-fetch-pubsub'
+          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.STAGING_GCP_DATASET_ID}}'
+
+      - name: Deploy Merge New Reservations
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'MergeNewReservations'
+          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
+          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-merge-pubsub'
+          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.STAGING_GCP_DATASET_ID}}'

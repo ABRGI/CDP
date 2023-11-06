@@ -8,12 +8,12 @@ resource "google_pubsub_topic" "function_trigger_fetch_pubsub" {
     ]
   }
 }
-/*
+
 resource "google_cloud_scheduler_job" "fetch_reservations_scheduler" {
   project     = var.project_id
   region      = "europe-west1"
   name        = "fetch-reservations-scheduler-job"
-  description = "Update shop product lists"
+  description = "Fetch waiting Nelson reservations"
   schedule    = "0,20,40 * * * *"
 
   pubsub_target {
@@ -21,7 +21,6 @@ resource "google_cloud_scheduler_job" "fetch_reservations_scheduler" {
     data       = base64encode("notused")
   }
 }
-*/
 
 resource "google_pubsub_topic" "function_trigger_merge_pubsub" {
   name    = "trigger-merge-pubsub"
@@ -38,8 +37,8 @@ resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
   project     = var.project_id
   region      = "europe-west1"
   name        = "merge-reservations-scheduler-job"
-  description = "Update shop product lists"
-  schedule    = "10,30,50 * * * *"
+  description = "Merge new reservations to profiles"
+  schedule    = "30 8,12,16,20 * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_merge_pubsub.id

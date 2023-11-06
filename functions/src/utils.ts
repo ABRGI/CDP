@@ -140,5 +140,20 @@ export const minTimestamp = (a: string | undefined, b: string | undefined): stri
   return a.localeCompare(b) < 0 ? a : b;
 }
 
+/**
+ * Splits array to chunks of given size
+ * @param chunkSize Size of chunk
+ * @param arr Array to split
+ * @returns Chunks
+ */
+export const splitToChunks = <T>(chunkSize: number, arr: T[]): T[][] => {
+  return arr.reduce((all, current) => {
+    if (all[all.length - 1].length >= chunkSize) {
+      all.push([])
+    }
+    all[all.length - 1].push(current)
+    return all
+  }, [[]] as T[][])
+}
 
 export const timestampFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZ'

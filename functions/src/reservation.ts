@@ -3,6 +3,7 @@ import { Customer } from "./customer"
 import { RoundToTwo, calculateDaysBetween, maxTimestamp, minTimestamp } from "./utils"
 import { mergeHotelCounts } from "./hotel"
 import { Voucher } from "./voucher"
+import { Guest } from "./guest"
 
 export type WaitingReservation = {
   id: number
@@ -73,6 +74,8 @@ export type MinimalReservation = {
   updated: string
   created: string
 }
+
+export type ReservationWithGuests = Reservation & { guests: Guest[] }
 
 const reservationInt = new Set([
   "id", "version", "reservationCode", "hotelId", "type",

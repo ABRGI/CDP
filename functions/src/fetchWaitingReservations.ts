@@ -12,7 +12,7 @@ export const fetchWaitingReservations = async () => {
   const bq = getBigQuery(googleProjectId)
   const latestReservation = await bq.queryOne<{ updated: string }>(datasetId, "SELECT MAX(updated) as updated FROM reservations")
   if (latestReservation) {
-    const latestUpdated = dayjs(latestReservation.updated).format(timestampFormat)
+    const latestUpdated = latestReservation.updated ? dayjs(latestReservation.updated).format(timestampFormat) : dayjs().subtract(10, "years").format(timestampFormat)
     const waitingReservations = await bq.query<WaitingReservation>(datasetId, `SELECT * FROM waitingReservations WHERE updated>TIMESTAMP('${latestUpdated}') ORDER BY updated ASC`)
     console.log(`Found ${waitingReservations.length} waiting reservations`)
 

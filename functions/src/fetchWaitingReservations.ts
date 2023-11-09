@@ -15,11 +15,14 @@ export const fetchWaitingReservations = async () => {
     if (latestReservation) {
       const latestUpdated = latestReservation.updated ? dayjs(latestReservation.updated).format(timestampFormat) : dayjs().subtract(10, "years").format(timestampFormat)
       const waitingReservations = await bq.query<WaitingReservation>(datasetId, `SELECT * FROM waitingReservations WHERE updated>TIMESTAMP('${latestUpdated}') ORDER BY updated ASC`)
-      console.log(`Found ${waitingReservations.length} waiting reservations`)
 
       const updateTimestamps = waitingReservations.reduce((all, wr) => { all[wr.id] = dayjs(wr.updated).format(timestampFormat); return all }, {} as { [id: number]: string })
 
-      const chunks = splitToChunks(20, waitingReservations.map(r => r.id))
+      const waitingReservationIds = waitingReservations.map(r => r.id)
+      const filteredWaiting = waitingReservationIds.reduce((all, current) => all.indexOf(current) !== -1 ? all : all.concat(current), [] as number[])
+
+      console.log(`Found ${filteredWaiting.length} waiting reservations`)
+      const chunks = splitToChunks(20, filteredWaiting)
 
       console.log(`Split to ${chunks.length} chunks`)
       for (const chunk of chunks) {

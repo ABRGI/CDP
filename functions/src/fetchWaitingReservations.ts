@@ -77,6 +77,6 @@ export const fetchWaitingReservations = async () => {
   }
   catch (error) {
     console.log('Fetching reservations failed')
-    console.log(error)
+    console.log(JSON.stringify(error, null, 2))
   }
 }

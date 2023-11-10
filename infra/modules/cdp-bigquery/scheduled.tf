@@ -32,7 +32,7 @@ resource "google_pubsub_topic" "function_trigger_merge_pubsub" {
     ]
   }
 }
-
+/*
 resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
   project     = var.project_id
   region      = "europe-west1"
@@ -45,3 +45,4 @@ resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
     data       = base64encode("notused")
   }
 }
+*/

@@ -28,7 +28,7 @@ export const fetchWaitingReservations = async () => {
       for (const chunk of chunks) {
         console.log('Fetching chunk reservations from Nelson')
         const response = await fetch(`${nelsonApiRoot}/api/cdp/reservation?secretKey=${nelsonApiKey}&reservationIds=${chunk.join(",")}`)
-        if (response.status === 200) {
+        if (chunk.length > 0 && response.status === 200) {
           console.log('Fetching succeeded')
           const reservationsWithGuests: ReservationWithGuests[] = ((await response.json()) as any).reservations
           const reservations = reservationsWithGuests.map(rg => {
@@ -40,14 +40,15 @@ export const fetchWaitingReservations = async () => {
             }
             rgNew.created = dayjs(rgNew.created).format("YYYY-MM-DD HH:mm:ss")
             rgNew.confirmed = dayjs(rgNew.confirmed).format("YYYY-MM-DD HH:mm:ss")
-            rgNew.checkout = dayjs(rgNew.confirmed).format("YYYY-MM-DD HH:mm:ss")
+            rgNew.checkIn = dayjs(rgNew.checkIn).format("YYYY-MM-DD HH:mm:ss")
+            rgNew.checkOut = dayjs(rgNew.checkOut).format("YYYY-MM-DD HH:mm:ss")
             rgNew.totalPaid = parseFloat(rgNew.totalPaid.replace("EUR ", ""))
             rgNew.totalPaidExtraForOTA = parseFloat(rgNew.totalPaid)
             rgNew.type = 0
             return rgNew as Reservation
           })
           const rids = reservationsWithGuests.map(r => r.id)
-          const guests = reservationsWithGuests.map(r => r.guests.map(g => ({ ...g, reservationId: r.id }))).flat().map(g => {
+          const guests = reservationsWithGuests.map(r => r.guests.map(g => ({ ...g, reservationId: r.id }))).flat().map((g, i) => {
             delete ((g as any).completedCheckInOnline)
             delete ((g as any).completedCheckIn)
             delete ((g as any).address)
@@ -64,19 +65,44 @@ export const fetchWaitingReservations = async () => {
           await bq.delete(datasetId, `DELETE FROM guests WHERE id IN (${guestIds.join(',')})`)
           await bq.delete(datasetId, `DELETE FROM reservations WHERE id IN (${rids.join(',')})`)
 
-          await bq.insert(datasetId, "guests", guests)
-          await bq.insert(datasetId, "reservations", reservations)
+          try {
+            await bq.insert(datasetId, "guests", guests)
+          } catch (insertErrors: any) {
+            if (!insertErrors.errors[0]?.errors) {
+              throw insertErrors
+            }
+            const invalidGuestIds = insertErrors.errors.filter((error: any) => {
+              return error.errors.find((e: any) => e.reason !== "stopped")
+            }).map((error: any) => error.row.id)
+            const validGuests = guests.filter(g => invalidGuestIds.indexOf(g.id) === -1)
+            await bq.insert(datasetId, "guests", validGuests)
+            console.warn(`Found ${validGuests.length} valid guests and ${invalidGuestIds.length} invalid guests. Total ${guests.length}.`)
+          }
 
-        } else {
-          console.log(`Fetching failed with status ${response.status}.`)
-          console.log(await response.text())
+          try {
+            await bq.insert(datasetId, "reservations", reservations)
+          } catch (insertErrors: any) {
+            if (!insertErrors.errors[0]?.errors) {
+              throw insertErrors
+            }
+            const invalidReservationIds = insertErrors.errors.filter((error: any) => {
+              return error.errors.find((e: any) => e.reason !== "stopped")
+            }).map((error: any) => error.row.id)
+            const validReservations = reservations.filter(r => invalidReservationIds.indexOf(r.id) === -1)
+            await bq.insert(datasetId, "reservations", validReservations)
+            console.warn(`Found ${validReservations.length} valid reservations and ${invalidReservationIds.length} invalid reservations. Total ${reservations.length}.`)
+          }
+        } else if (chunk.length > 0) {
+          console.error(`Fetching failed with status ${response.status}.`)
+          console.error(await response.text())
           throw Error(response.statusText)
         }
       }
     }
   }
   catch (error) {
-    console.log('Fetching reservations failed')
-    console.log(JSON.stringify(error, null, 2))
+    console.error('Fetching reservations failed')
+    console.error(error)
+    console.error(JSON.stringify(error, null, 2))
   }
 }

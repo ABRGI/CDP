@@ -14,7 +14,7 @@ resource "google_cloud_scheduler_job" "fetch_reservations_scheduler" {
   region      = "europe-west1"
   name        = "fetch-reservations-scheduler-job"
   description = "Fetch waiting Nelson reservations"
-  schedule    = "0,20,40 * * * *"
+  schedule    = "0 4,8,12,16,20 * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_fetch_pubsub.id
@@ -32,17 +32,17 @@ resource "google_pubsub_topic" "function_trigger_merge_pubsub" {
     ]
   }
 }
-/*
+
 resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
   project     = var.project_id
   region      = "europe-west1"
   name        = "merge-reservations-scheduler-job"
   description = "Merge new reservations to profiles"
-  schedule    = "30 8,12,16,20 * * *"
+  schedule    = "0 5,9,13,17,21 * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_merge_pubsub.id
     data       = base64encode("notused")
   }
 }
-*/
+

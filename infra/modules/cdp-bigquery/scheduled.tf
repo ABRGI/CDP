@@ -38,7 +38,7 @@ resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
   region      = "europe-west1"
   name        = "merge-reservations-scheduler-job"
   description = "Merge new reservations to profiles"
-  schedule    = "0 4,8,12,16,20 * * *"
+  schedule    = "0 5,9,13,17,21 * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_merge_pubsub.id

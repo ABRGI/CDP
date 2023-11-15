@@ -59,17 +59,22 @@ export class OnlineMerger {
     const latest = await this.bigQuery.queryOne<{ updated: string }>(this.datasetId, `
       SELECT MAX(updated) as updated  FROM customers
     `)
+    console.log(`Checking latest merging updated: ${latest.updated}`)
     const latestUpdate = latest.updated ? dayjs(latest.updated).format(timestampFormat) : dayjs().year(1970).format(timestampFormat)
 
     const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC`)
     if (!newReservations.length) {
       return status
     }
+
+    console.log(`Found ${newReservations.length} new reservations`)
     const minReservationId = newReservations.reduce((all, curr) => Math.min(all, curr.id), newReservations[0].id)
     const maxReservationId = newReservations.reduce((all, curr) => Math.max(all, curr.id), newReservations[0].id)
 
     const newGuests = await this.bigQuery.query<Guest>(this.datasetId, `SELECT * FROM guests WHERE reservationId>=${minReservationId} AND reservationId <= ${maxReservationId} AND guestIndex > 0`)
+    console.log(`Found ${newGuests.length} new guests`)
     for (const reservation of newReservations) {
+      console.log(`Merging reservation ${reservation.id}`)
       const guests = newGuests.filter(g => g.reservationId === reservation.id)
       const addStatus = await this.addReservation(reservation, guests)
       status.newGuests += addStatus.newGuests
@@ -78,6 +83,7 @@ export class OnlineMerger {
       status.updatedProfiles += addStatus.updatedProfiles
     }
 
+    console.log(status)
     const customers = this.merger.getCustomers()
     const updatedCustomers = customers.filter(c => this.updatedCustomerIds.has(c.id))
     const createdCustomers = customers.filter(c => this.createdCustomerIds.has(c.id))

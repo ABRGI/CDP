@@ -689,7 +689,7 @@ resource "google_bigquery_table" "customers_table" {
         "description" : "Indicates if customer is blocked or not"
       },
       {
-        "name" : "totalWeekdays",
+        "name" : "totalWeekDays",
         "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Number of nights stayed during week"

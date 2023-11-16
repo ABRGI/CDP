@@ -226,7 +226,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
   if (!avgBookingsPerYear) {
     throw Error(JSON.stringify(c, null, 2))
   }
-  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(firstCheckInDate, "days") / c.totalBookings)
+  const avgBookingFrequencyDays = RoundToTwo(dayjs(r.checkIn).diff(firstCheckInDate, "days") / (c.totalBookings + 1))
 
   const avgNightsPerBooking = RoundToTwo((c.avgNightsPerBooking * c.totalBookings + nc.avgNightsPerBooking) / (c.totalBookings + 1))
 

@@ -87,7 +87,6 @@ export class OnlineMerger {
     const customers = this.merger.getCustomers()
     const updatedCustomers = customers.filter(c => this.updatedCustomerIds.has(c.id))
     const createdCustomers = customers.filter(c => this.createdCustomerIds.has(c.id))
-    await this.removeCustomers(createdCustomers.map(c => c.id))
     await this.removeCustomers(Array.from(this.updatedCustomerIds.values()))
     await this.createCustomers(updatedCustomers)
     await this.createCustomers(createdCustomers)

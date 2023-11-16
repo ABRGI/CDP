@@ -62,7 +62,7 @@ export class OnlineMerger {
     console.log(`Checking latest merging updated: ${latest.updated}`)
     const latestUpdate = latest.updated ? dayjs(latest.updated).format(timestampFormat) : dayjs().year(1970).format(timestampFormat)
 
-    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC LIMIT 10`)
+    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC LIMIT 40`)
     if (!newReservations.length) {
       return status
     }
@@ -168,28 +168,21 @@ export class OnlineMerger {
     }
 
     const potentials = new Set<Customer>()
-    const ssnCustomer = ssn ? (await this.findCustomerWithSsn(ssn)) : undefined
-    if (ssn && ssnCustomer) {
-      potentials.add(ssnCustomer)
-    }
-    if (email) {
-      const matches = await this.findCustomerWithEmail(email, 1)
-      for (const match of matches) {
+
+
+    const promises: Promise<Customer[]>[] = []
+    if (ssn) { promises.push(this.findCustomerWithSsn(ssn).then(c => c ? [c] : [])) }
+    if (email) { promises.push(this.findCustomerWithEmail(email, 1)) }
+    if (phoneNumber) { promises.push(this.findCustomerWithPhoneNumber(phoneNumber, 1)) }
+    if (firstName && lastName) { promises.push(this.findCustomerWithName(`${firstName} ${lastName}`, 1)) }
+
+    const results = await Promise.all(promises)
+    for (const result of results) {
+      for (const match of result) {
         potentials.add(match)
       }
     }
-    if (phoneNumber) {
-      const matches = await this.findCustomerWithPhoneNumber(phoneNumber, 1)
-      for (const match of matches) {
-        potentials.add(match)
-      }
-    }
-    if (firstName && lastName) {
-      const matches = await this.findCustomerWithName(`${firstName} ${lastName}`, 1)
-      for (const match of matches) {
-        potentials.add(match)
-      }
-    }
+
     let maxPoints = -1000
     let maxCustomer: Customer | undefined
     for (const customer of potentials.values()) {
@@ -267,6 +260,32 @@ export class OnlineMerger {
       `SELECT * FROM customers
           WHERE firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}') <= ${maxDistance}
       `)
+  }
+
+  /**
+   * Search by any of three
+   * @param name Name to search for (first + last)
+   * @param phoneNumber Phone number to search for
+   * @param email Email to search for
+   * @param maxDistance Maximum Levenshtein distance
+   * @returns
+   */
+  protected async findCustomerWithEmailPhoneNumberName(name: string | undefined, phoneNumber: string | undefined, email: string | undefined, maxDistance: number): Promise<Customer[]> {
+    const conditions: string[] = []
+    if (name) {
+      conditions.push(`(firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}') <= ${maxDistance})`)
+    }
+    if (phoneNumber) {
+      conditions.push(`(phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}') <= ${maxDistance})`)
+    }
+    if (email) {
+      conditions.push(`(email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}') <= ${maxDistance})`)
+    }
+    if (conditions.length === 0) {
+      return []
+    }
+    return await this.bigQuery.query<Customer>(this.datasetId,
+      `SELECT * FROM customers WHERE ${conditions.join(" OR ")}`)
   }
 
   /**

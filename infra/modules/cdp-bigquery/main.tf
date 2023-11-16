@@ -820,7 +820,7 @@ resource "google_bigquery_routine" "levenshtein_distance_routine" {
   routine_type       = "SCALAR_FUNCTION"
   language           = "JAVASCRIPT"
   imported_libraries = ["gs://${google_storage_bucket.javascript_bucket.name}/bigquery.js"]
-  definition_body    = "return levenshteinDistance(s1, s2)"
+  definition_body    = "return levenshteinDistance(s1, s2, s3)"
   determinism_level  = "DETERMINISTIC"
 
   arguments {
@@ -830,6 +830,10 @@ resource "google_bigquery_routine" "levenshtein_distance_routine" {
   arguments {
     name      = "s2"
     data_type = "{\"typeKind\" : \"STRING\"}"
+  }
+  arguments {
+    name      = "s3"
+    data_type = "{\"typeKind\" : \"INT64\"}"
   }
 
   return_type = "{\"typeKind\" : \"FLOAT64\"}"

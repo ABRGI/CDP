@@ -62,7 +62,7 @@ export class OnlineMerger {
     console.log(`Checking latest merging updated: ${latest.updated}`)
     const latestUpdate = latest.updated ? dayjs(latest.updated).format(timestampFormat) : dayjs().year(1970).format(timestampFormat)
 
-    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC LIMIT 40`)
+    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC LIMIT 80`)
     if (!newReservations.length) {
       return status
     }
@@ -73,6 +73,7 @@ export class OnlineMerger {
 
     const newGuests = await this.bigQuery.query<Guest>(this.datasetId, `SELECT * FROM guests WHERE reservationId>=${minReservationId} AND reservationId <= ${maxReservationId} AND guestIndex > 0`)
     console.log(`Found ${newGuests.length} new guests`)
+    const startTime = new Date().getTime()
     for (const reservation of newReservations) {
       console.log(`Merging reservation ${reservation.id}`)
       const guests = newGuests.filter(g => g.reservationId === reservation.id)
@@ -81,15 +82,27 @@ export class OnlineMerger {
       status.newProfiles += addStatus.newProfiles
       status.newReservations += addStatus.newReservations
       status.updatedProfiles += addStatus.updatedProfiles
+      const timeDiff = new Date().getTime() - startTime
+      if (timeDiff > 440000) {
+        break;
+      }
     }
-
     console.log(status)
     const customers = this.merger.getCustomers()
     const updatedCustomers = customers.filter(c => this.updatedCustomerIds.has(c.id))
     const createdCustomers = customers.filter(c => this.createdCustomerIds.has(c.id))
-    await this.removeCustomers(Array.from(this.updatedCustomerIds.values()))
-    await this.createCustomers(updatedCustomers)
-    await this.createCustomers(createdCustomers)
+    try {
+      await this.removeCustomers(Array.from(this.updatedCustomerIds.values()))
+      await this.createCustomers(updatedCustomers)
+      await this.createCustomers(createdCustomers)
+    }
+    catch (exception: any) {
+      if (exception.code !== 400 || exception.errors[0].message.indexOf("streaming buffer") === -1) {
+        throw exception
+      } else {
+        console.log("Ignore streaming buffer error and try later")
+      }
+    }
     return status
   }
 
@@ -108,6 +121,9 @@ export class OnlineMerger {
     let customer = await this.findExistingCustomer(r.customerSsn, r.customerEmailReal, r.customerMobile,
       r.customerFirstName, r.customerLastName)
     if (customer) {
+      if (!hasCustomerReservation(customer, r.id)) {
+        status.newReservations++
+      }
       customer = await this.onlineMergeReservationToCustomer(customer, r)
       if (!this.createdCustomerIds.has(customer.id)) {
         this.updatedCustomerIds.add(customer.id)
@@ -118,16 +134,25 @@ export class OnlineMerger {
       if (customer) {
         this.createdCustomerIds.add(customer.id)
       }
+      status.newReservations++
       status.newProfiles++
     }
     if (customer) {
+      let recreate = false
       for (const g of guests) {
         if (g.guestIndex === 0) {
           customer = fillInCustomerFromGuest(customer, g)
         } else {
-          customer = await this.onlineAddGuestToCustomer(customer, g)
+          if (!hasCustomerReservationGuest(customer, g.id)) {
+            customer = await this.onlineAddGuestToCustomer(customer, g)
+          } else {
+            recreate = true
+          }
         }
         status.newGuests++
+      }
+      if (recreate) {
+        customer = await this.recreateCustomer(customer)
       }
       this.merger.addCustomerToIndices(customer)
     }
@@ -152,6 +177,43 @@ export class OnlineMerger {
       }
     }
     return status
+  }
+
+  removeDuplicates = async (): Promise<void> => {
+    const allIds = await this.bigQuery.query<{ customerId: string, type: string, id: string }>(this.datasetId,
+      "SELECT c.id as customerId, updated, ids.type as type, ids.id as id FROM customers as c, UNNEST(c.profileIds) as ids ORDER BY updated DESC")
+
+    const guests: { [guestId: string]: string[] } = {}
+    const reservations: { [reservationId: string]: string[] } = {}
+
+    for (const id of allIds) {
+      if (id.type === "Guest") {
+        guests[id.id] = (guests[id.id] || [])
+        if (guests[id.id].indexOf(id.customerId) === -1) {
+          guests[id.id].push(id.customerId)
+        }
+      }
+      else if (id.type === "Reservation") {
+        reservations[id.id] = (reservations[id.id] || [])
+        if (reservations[id.id].indexOf(id.customerId) === -1) {
+          reservations[id.id].push(id.customerId)
+        }
+      } else if (id.type !== "ReservationGuest") {
+        throw Error(`Unknown id type: ${id.type}`)
+      }
+    }
+    for (const key of Object.keys(guests)) {
+      const guest = guests[key]
+      if (guest.length > 1) {
+        console.log(`${key}: ${guest}`)
+      }
+    }
+    for (const key of Object.keys(reservations)) {
+      const reservation = reservations[key]
+      if (reservation.length > 1) {
+        console.log(`${key}: ${reservation}`)
+      }
+    }
   }
 
   /**
@@ -182,7 +244,6 @@ export class OnlineMerger {
         potentials.add(match)
       }
     }
-
     let maxPoints = -1000
     let maxCustomer: Customer | undefined
     for (const customer of potentials.values()) {
@@ -234,7 +295,7 @@ export class OnlineMerger {
   protected async findCustomerWithEmail(email: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
-          WHERE email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}') <= ${maxDistance}
+          WHERE email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}', ${maxDistance}) <= ${maxDistance}
       `)
   }
 
@@ -246,7 +307,7 @@ export class OnlineMerger {
   protected async findCustomerWithPhoneNumber(phoneNumber: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
-          WHERE phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}') <= ${maxDistance}
+          WHERE phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}', ${maxDistance}) <= ${maxDistance}
       `)
   }
 
@@ -258,7 +319,7 @@ export class OnlineMerger {
   protected async findCustomerWithName(name: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
-          WHERE firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}') <= ${maxDistance}
+          WHERE firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}', ${maxDistance}) <= ${maxDistance}
       `)
   }
 
@@ -273,13 +334,13 @@ export class OnlineMerger {
   protected async findCustomerWithEmailPhoneNumberName(name: string | undefined, phoneNumber: string | undefined, email: string | undefined, maxDistance: number): Promise<Customer[]> {
     const conditions: string[] = []
     if (name) {
-      conditions.push(`(firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}') <= ${maxDistance})`)
+      conditions.push(`(firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}', ${maxDistance}) <= ${maxDistance})`)
     }
     if (phoneNumber) {
-      conditions.push(`(phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}') <= ${maxDistance})`)
+      conditions.push(`(phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}', ${maxDistance}) <= ${maxDistance})`)
     }
     if (email) {
-      conditions.push(`(email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}') <= ${maxDistance})`)
+      conditions.push(`(email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}', ${maxDistance}) <= ${maxDistance})`)
     }
     if (conditions.length === 0) {
       return []

@@ -114,7 +114,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
 
       marketingPermission: r.marketingPermission,
 
-      profileIds: [{ id: r.id, type: "Reservation" }],
+      profileIds: [{ id: g.id, type: "Guest" }],
 
       updated: r.updated,
 

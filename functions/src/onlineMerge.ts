@@ -179,9 +179,28 @@ export class OnlineMerger {
     return status
   }
 
-  removeDuplicates = async (): Promise<void> => {
+  removeDuplicateCustomerProfiles = async (): Promise<void> => {
+    const profiles = await this.bigQuery.query<{ id: string, updated: string }>(this.datasetId,
+      'SELECT id, updated WHERE TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), updated, MINUTE) > 240 FROM customers  ORDER BY updated DESC')
+    const foundIds: { [id: string]: string } = {}
+    let duplicates = 0
+    for (const profile of profiles) {
+      if (!(profile.id in foundIds)) {
+        foundIds[profile.id] = profile.updated
+      } else {
+        console.log(`KEEPING profile ${profile.id} updated ${foundIds[profile.id]}`)
+        console.log(`DELETING profile ${profile.id} updated ${profile.updated}`)
+        await this.bigQuery.delete(this.datasetId, `DELETE FROM customers WHERE id='${profile.id}' AND updated='${profile.updated}'`)
+        console.log('-------------------------------------------------------------------------------------------')
+        duplicates++
+      }
+    }
+    console.log(`Found ${duplicates} duplicate profiles.`)
+  }
+
+  removeDuplicateReservations = async (): Promise<void> => {
     const allIds = await this.bigQuery.query<{ customerId: string, type: string, id: string }>(this.datasetId,
-      "SELECT c.id as customerId, updated, ids.type as type, ids.id as id FROM customers as c, UNNEST(c.profileIds) as ids ORDER BY updated DESC")
+      "SELECT c.id as customerId, updated, ids.type as type, ids.id as id FROM customers as c, UNNEST(c.profileIds) as ids WHERE TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), updated, MINUTE) > 240 ORDER BY updated DESC")
 
     const guests: { [guestId: string]: string[] } = {}
     const reservations: { [reservationId: string]: string[] } = {}
@@ -202,18 +221,95 @@ export class OnlineMerger {
         throw Error(`Unknown id type: ${id.type}`)
       }
     }
+    console.log('Check for duplicate guests')
     for (const key of Object.keys(guests)) {
-      const guest = guests[key]
-      if (guest.length > 1) {
-        console.log(`${key}: ${guest}`)
+      const guestIds = guests[key]
+      if (guestIds.length > 1) {
+        const customers = await this.getCustomers(guestIds)
+        const guest = await this.getGuest(parseInt(key, 10))
+        const matchingCustomer = await this.findExistingCustomer(guest.ssn, guest.email, guest.mobile, guest.firstName, guest.lastName)
+        if (matchingCustomer) {
+          console.log(`Merge guest to customer ${matchingCustomer.id}`)
+          const reservation = await this.getReservation(guest.reservationId)
+          await this.onlineMergeGuestToCustomer(matchingCustomer, reservation, guest)
+          for (const customer of customers) {
+            if (customer.id !== matchingCustomer.id) {
+              customer.profileIds = customer.profileIds.filter(pid => pid.type !== "Guest" && pid.id !== guest.id)
+              if (customer.profileIds.length > 0) {
+                await this.updateCustomer(await this.recreateCustomer(customer))
+              } else {
+                await this.removeCustomer(customer.id)
+              }
+            }
+          }
+        } else {
+          console.error(`Matching customer not found guest id ${guest.id}`)
+        }
       }
     }
+    console.log('Done')
+    console.log('Check for duplicate reservations')
     for (const key of Object.keys(reservations)) {
-      const reservation = reservations[key]
-      if (reservation.length > 1) {
-        console.log(`${key}: ${reservation}`)
+      const reservationIds = reservations[key]
+      if (reservationIds.length > 1) {
+        const customers = await this.getCustomers(reservationIds)
+        const reservation = await this.getReservation(parseInt(key, 10))
+        const matchingCustomer = await this.findExistingCustomer(reservation.customerSsn, reservation.customerEmailReal,
+          reservation.customerMobile, reservation.customerFirstName, reservation.customerLastName)
+        if (matchingCustomer) {
+          console.log(`Merge reservation to customer ${matchingCustomer.id}`)
+          await this.onlineMergeReservationToCustomer(matchingCustomer, reservation)
+          for (const customer of customers) {
+            if (customer.id !== matchingCustomer.id) {
+              const guests = await this.getGuests(customer.profileIds.filter(g => g.type === "ReservationGuest").map(g => g.id))
+              customer.profileIds = customer.profileIds.filter(pid => {
+                if (pid.type === "ReservationGuest" && guests.find(g => g.id === pid.id && g.reservationId === reservation.id)) {
+                  return false
+                }
+                return pid.type !== "Reservation" && pid.id !== reservation.id
+              })
+              if (customer.profileIds.length > 0) {
+                console.log(`Update customer ${customer.id} without the reservation ${reservation.id}`)
+                await this.updateCustomer(await this.recreateCustomer(customer))
+              } else {
+                console.log(`Remove empty customer ${customer.id}`)
+                await this.removeCustomer(customer.id)
+              }
+            }
+          }
+        } else {
+          console.error(`Matching customer not found guest id ${reservation.id}`)
+        }
       }
     }
+    console.log('Done')
+  }
+
+  async getCustomers(customerIds: string[]): Promise<Customer[]> {
+    if (customerIds.length === 0) return []
+    return this.bigQuery.query(this.datasetId, `SELECT * FROM customers WHERE id IN (${customerIds.map(id => `'${id}'`).join(',')})`)
+  }
+
+  async getGuests(guestIds: number[]): Promise<Guest[]> {
+    if (guestIds.length === 0) return []
+    return this.bigQuery.query(this.datasetId, `SELECT * FROM guests WHERE id IN (${guestIds.map(id => id).join(',')})`)
+  }
+
+  async getGuest(id: number): Promise<Guest> {
+    return this.bigQuery.queryOne(this.datasetId, `SELECT * FROM guests WHERE id=${id}`)
+  }
+
+  async getReservation(id: number): Promise<Reservation> {
+    return this.bigQuery.queryOne(this.datasetId, `SELECT * FROM reservations WHERE id=${id}`)
+  }
+
+  async updateCustomer(customer: Customer): Promise<void> {
+    await this.bigQuery.delete(this.datasetId, `DELETE FROM customers WHERE id='${customer.id}'`)
+    await this.bigQuery.insertOne(this.datasetId, "customers", customer)
+  }
+
+  async removeCustomer(customerId: string): Promise<void> {
+    await this.bigQuery.delete(this.datasetId, `DELETE FROM customers WHERE id='${customerId}'`)
   }
 
   /**

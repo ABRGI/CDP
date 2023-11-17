@@ -181,7 +181,7 @@ export class OnlineMerger {
 
   removeDuplicateCustomerProfiles = async (): Promise<void> => {
     const profiles = await this.bigQuery.query<{ id: string, updated: string }>(this.datasetId,
-      'SELECT id, updated WHERE TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), updated, MINUTE) > 240 FROM customers  ORDER BY updated DESC')
+      'SELECT id, updated FROM customers WHERE TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), updated, MINUTE) > 240 ORDER BY updated DESC')
     const foundIds: { [id: string]: string } = {}
     let duplicates = 0
     for (const profile of profiles) {

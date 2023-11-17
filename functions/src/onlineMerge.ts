@@ -345,7 +345,9 @@ export class OnlineMerger {
     for (const customer of potentials.values()) {
       if (customer) {
         const points = calculateCustomerMatchPoints(customer, ssn, email, phoneNumber, firstName, lastName)
-        if (points > maxPoints && points > 1) {
+        // Favor larger profiles
+        const extra = maxCustomer && customer.profileIds.length > maxCustomer.profileIds.length && points === maxPoints ? 1 : 0
+        if (points > maxPoints + extra && points > 1) {
           maxPoints = points
           maxCustomer = customer
         }

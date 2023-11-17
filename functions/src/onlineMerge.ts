@@ -83,7 +83,7 @@ export class OnlineMerger {
       status.newReservations += addStatus.newReservations
       status.updatedProfiles += addStatus.updatedProfiles
       const timeDiff = new Date().getTime() - startTime
-      if (timeDiff > 340000) {
+      if (timeDiff > 400000) {
         break;
       }
     }
@@ -157,7 +157,8 @@ export class OnlineMerger {
       this.merger.addCustomerToIndices(customer)
     }
     for (const g of guests) {
-      if (g.ssn !== r.customerSsn && g.email !== r.customerEmailReal && g.mobile !== r.customerMobile && g.guestIndex > 0) {
+      if (g.ssn !== r.customerSsn && g.email !== r.customerEmailReal && g.mobile !== r.customerMobile && g.guestIndex > 0 &&
+        (g.ssn || g.email || g.mobile || (g.firstName && g.lastName))) {
         customer = await this.findExistingCustomer(g.ssn, g.email, g.mobile)
         if (!customer) {
           const customer = createCustomerFromGuest(r, g)
@@ -295,8 +296,28 @@ export class OnlineMerger {
     return this.bigQuery.query(this.datasetId, `SELECT * FROM guests WHERE id IN (${guestIds.map(id => id).join(',')})`)
   }
 
+  async getGuestMap(guestIds: number[]): Promise<{ [id: number]: Guest }> {
+    if (guestIds.length === 0) return {}
+    const guests = await this.getGuests(guestIds)
+    const map: { [id: number]: Guest } = {}
+    for (const guest of guests) {
+      map[guest.id] = guest
+    }
+    return map
+  }
+
   async getGuest(id: number): Promise<Guest> {
     return this.bigQuery.queryOne(this.datasetId, `SELECT * FROM guests WHERE id=${id}`)
+  }
+
+  async getReservationMap(reservationIds: number[]): Promise<{ [index: number]: Reservation }> {
+    if (reservationIds.length === 0) return {}
+    const reservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id IN (${reservationIds.map(id => id).join(',')})`)
+    const map: { [id: number]: Reservation } = {}
+    for (const r of reservations) {
+      map[r.id] = r
+    }
+    return map
   }
 
   async getReservation(id: number): Promise<Reservation> {
@@ -504,10 +525,12 @@ export class OnlineMerger {
     const profileIds = customer.profileIds
     let newCustomer: Customer | undefined
 
+    const guestMap = await this.getGuestMap(customer.profileIds.filter(pid => pid.type !== "Reservation").map(pid => pid.id))
+    const reservationMap = await this.getReservationMap(customer.profileIds.filter(pid => pid.type === "Reservation").map(pid => pid.id))
     for (const pid of profileIds) {
       if (pid.type === "Guest") {
-        const guest = await this.bigQuery.queryOne<Guest>(this.datasetId, `SELECT * FROM guests WHERE id=${pid.id}`)
-        const reservation = await this.bigQuery.queryOne<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id=${guest.reservationId}`)
+        const guest = guestMap[pid.id]
+        const reservation = reservationMap[guest.reservationId]
         if (guest && reservation) {
           if (newCustomer) {
             newCustomer = mergeGuestToCustomer(newCustomer, reservation, guest)
@@ -517,12 +540,12 @@ export class OnlineMerger {
         }
       }
       else if (pid.type === "ReservationGuest" && newCustomer) {
-        const guest = await this.bigQuery.queryOne<Guest>(this.datasetId, `SELECT * FROM guests WHERE id=${pid.id}`)
+        const guest = guestMap[pid.id]
         if (guest) {
           newCustomer = addGuestToCustomer(newCustomer, guest)
         }
       } else if (pid.type === "Reservation") {
-        const reservation = await this.bigQuery.queryOne<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE id=${pid.id}`)
+        const reservation = reservationMap[pid.id]
         if (reservation) {
           if (newCustomer) {
             newCustomer = mergeReservationToCustomer(newCustomer, reservation)

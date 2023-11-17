@@ -83,7 +83,7 @@ export class OnlineMerger {
       status.newReservations += addStatus.newReservations
       status.updatedProfiles += addStatus.updatedProfiles
       const timeDiff = new Date().getTime() - startTime
-      if (timeDiff > 440000) {
+      if (timeDiff > 340000) {
         break;
       }
     }

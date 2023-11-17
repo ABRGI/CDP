@@ -45,3 +45,28 @@ resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
     data       = base64encode("notused")
   }
 }
+
+
+resource "google_pubsub_topic" "function_trigger_remove_duplicates_pubsub" {
+  name    = "trigger-duplicate-removal-pubsub"
+  project = var.project_id
+
+  message_storage_policy {
+    allowed_persistence_regions = [
+      "europe-west1",
+    ]
+  }
+}
+
+resource "google_cloud_scheduler_job" "remove_duplicates_scheduler" {
+  project     = var.project_id
+  region      = "europe-west1"
+  name        = "remove-duplicates-scheduler-job"
+  description = "Remove duplicate profiles and reservations"
+  schedule    = "30 5,6,7,9,10,11,13,14,15,17,21,22,23 * * *"
+
+  pubsub_target {
+    topic_name = google_pubsub_topic.function_trigger_remove_duplicates_pubsub.id
+    data       = base64encode("notused")
+  }
+}

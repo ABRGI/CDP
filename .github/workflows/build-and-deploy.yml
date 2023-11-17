@@ -64,3 +64,17 @@ jobs:
           event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
           event_trigger_resource: 'projects/${{vars.TEST_GCP_PROJECT_ID}}/topics/trigger-merge-pubsub'
           env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.TEST_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}}'
+
+      - name: Deploy Remove Duplicates
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'RemoveDuplicates'
+          project_id: '${{vars.TEST_GCP_PROJECT_ID}}'
+          runtime: 'nodejs16'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
+          event_trigger_resource: 'projects/${{vars.TEST_GCP_PROJECT_ID}}/topics/trigger-duplicate-removal-pubsub'
+          timeout: 540
+          memory_mb: 2048
+          env_vars: 'GCP_PROJECT_ID=${{vars.TEST_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.TEST_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}}'

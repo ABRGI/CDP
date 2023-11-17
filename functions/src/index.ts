@@ -73,3 +73,19 @@ http('MergeNewReservations', async (_: Request, res: Response) => {
     res.status(500).end()
   }
 });
+
+
+/**
+ * Cloud function which removes duplicates
+ */
+http('RemoveDuplicates', async (_: Request, res: Response) => {
+  try {
+    await onlineMerger.removeDuplicateCustomerProfiles()
+    await onlineMerger.removeDuplicateReservations()
+    res.status(200).end()
+  } catch (error) {
+    console.log(error)
+    console.log(JSON.stringify(error))
+    res.status(500).end()
+  }
+});

@@ -7,7 +7,7 @@ import { getBigQuery } from "../bigquery"
 import { Voucher, mapVoucherValue, mapVouchersToReservations } from "../voucher"
 import { Price, mapPriceValue, mapPricesToReservations } from "../price"
 
-const loadDataToBigQuery = async (projectId: string, datasetId: string,
+const loadDataToBigQuery = async (projectId: string, datasetId: string, latestUpdateTimestamp: string,
   reservationFilename: string, guestFilename: string, voucherFilename: string, priceFilename: string): Promise<void> => {
 
   const bq = getBigQuery(projectId)
@@ -23,7 +23,7 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   process.stdout.write("done.\n")
 
   process.stdout.write("Loading reservations...")
-  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue, { updated: dayjs().format(timestampFormat), voucherKeys: [] })
+  const rawReservations = await loadCsv<Reservation>(reservationFilename, mapReservationValue, { updated: dayjs().format(latestUpdateTimestamp), voucherKeys: [] })
   const reservations = rawReservations.sort((a, b) => a.id - b.id)
     .map(r => ({ ...r, totalPaid: pricesMap[r.id] ? pricesMap[r.id].totalPrice : 0.0, voucherKeys: (voucherMap[r.id] || []).map(v => v.voucherKey) }))
   process.stdout.write("done.\n")
@@ -84,11 +84,11 @@ const loadDataToBigQuery = async (projectId: string, datasetId: string,
   console.log(`Found ${reservations.length} reservations, ${guests.length} guests and created ${customers.length} customer profiles`)
 }
 
-if (process.argv.length < 7) {
-  console.log("Usage: ts-node load-data-dump-to-bq.ts <target_project_id> <target_dataset_id> <reservations>.csv <guests>.csv <vouchers>.csv <price>.csv")
+if (process.argv.length < 8) {
+  console.log("Usage: ts-node load-data-dump-to-bq.ts <target_project_id> <target_dataset_id> <latest_update_timestamp> <reservations>.csv <guests>.csv <vouchers>.csv <price>.csv")
   process.exit(0)
 } else {
-  loadDataToBigQuery(process.argv[2], process.argv[3], process.argv[4], process.argv[5], process.argv[6], process.argv[7]).then(() => {
+  loadDataToBigQuery(process.argv[2], process.argv[3], process.argv[4], process.argv[5], process.argv[6], process.argv[7], process.argv[8]).then(() => {
     console.log("All done.")
   }).catch((error) => {
     console.log(JSON.stringify(error, null, 2))

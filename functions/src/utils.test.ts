@@ -1,5 +1,5 @@
 import "jest"
-import { distanceMoreThan } from "./utils";
+import { distanceMoreThan, escapeString } from "./utils";
 
 describe('Utils tests', () => {
   beforeEach(() => {
@@ -20,5 +20,9 @@ describe('Utils tests', () => {
     expect(distanceMoreThan("esko.erehtymaton@gmail.com", "esko.erehtymato@gmail.com", 1)).toBe(false)
     expect(distanceMoreThan("esko.erehtymaton@gmail.com", "esko.erehtymato@gmail.comi", 2)).toBe(false)
     expect(distanceMoreThan("esko.erehtymaton@gmail.com", "esko.erehtymato@gmail.comi", 1)).toBe(true)
+  })
+
+  test('espace string', () => {
+    expect(escapeString(`Boss O'Leary`)).toEqual(`Boss O\\'Leary`)
   })
 });

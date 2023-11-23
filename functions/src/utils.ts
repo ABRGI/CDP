@@ -157,3 +157,8 @@ export const splitToChunks = <T>(chunkSize: number, arr: T[]): T[][] => {
 }
 
 export const timestampFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZ'
+
+
+export const escapeString = (str: string): string => {
+  return str.replace(/'/g, `\\'`)
+}

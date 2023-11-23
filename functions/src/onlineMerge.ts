@@ -4,7 +4,7 @@ import { Customer, calculateCustomerMatchPoints, hasCustomerGuest, hasCustomerRe
 import { Guest, addGuestToCustomer, createCustomerFromGuest, fillInCustomerFromGuest, mergeGuestToCustomer } from "./guest"
 import { CustomerMerger } from "./merge"
 import { Reservation, createCustomerFromReservation, mergeReservationToCustomer } from "./reservation"
-import { timestampFormat } from "./utils"
+import { escapeString, timestampFormat } from "./utils"
 
 /**
  * Online merging status
@@ -403,7 +403,7 @@ export class OnlineMerger {
    * @returns
    */
   protected async findCustomerWithSsn(ssn: string): Promise<Customer | undefined> {
-    return await this.bigQuery.queryOne(this.datasetId, `SELECT * FROM customers WHERE ssn='${ssn}'`) as Customer
+    return await this.bigQuery.queryOne(this.datasetId, `SELECT * FROM customers WHERE ssn='${escapeString(ssn)}'`) as Customer
   }
 
   /**
@@ -414,7 +414,7 @@ export class OnlineMerger {
   protected async findCustomerWithEmail(email: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
-          WHERE email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}', ${maxDistance}) <= ${maxDistance}
+          WHERE email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${escapeString(email)}', ${maxDistance}) <= ${maxDistance}
       `)
   }
 
@@ -426,7 +426,7 @@ export class OnlineMerger {
   protected async findCustomerWithPhoneNumber(phoneNumber: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
-          WHERE phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}', ${maxDistance}) <= ${maxDistance}
+          WHERE phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${escapeString(phoneNumber)}', ${maxDistance}) <= ${maxDistance}
       `)
   }
 
@@ -438,7 +438,7 @@ export class OnlineMerger {
   protected async findCustomerWithName(name: string, maxDistance: number): Promise<Customer[]> {
     return await this.bigQuery.query<Customer>(this.datasetId,
       `SELECT * FROM customers
-          WHERE firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}', ${maxDistance}) <= ${maxDistance}
+          WHERE firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${escapeString(name)}', ${maxDistance}) <= ${maxDistance}
       `)
   }
 
@@ -456,10 +456,10 @@ export class OnlineMerger {
       conditions.push(`(firstName IS NOT NULL AND lastName IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(CONCAT(firstName, ' ', lastName), '${name}', ${maxDistance}) <= ${maxDistance})`)
     }
     if (phoneNumber) {
-      conditions.push(`(phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${phoneNumber}', ${maxDistance}) <= ${maxDistance})`)
+      conditions.push(`(phoneNumber IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(phoneNumber, '${escapeString(phoneNumber)}', ${maxDistance}) <= ${maxDistance})`)
     }
     if (email) {
-      conditions.push(`(email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${email}', ${maxDistance}) <= ${maxDistance})`)
+      conditions.push(`(email IS NOT NULL AND \`${this.projectId}.${this.datasetId}\`.levenshtein_distance_routine(email, '${escapeString(email)}', ${maxDistance}) <= ${maxDistance})`)
     }
     if (conditions.length === 0) {
       return []

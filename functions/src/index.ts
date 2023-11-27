@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { fetchWaitingReservations } from './fetchWaitingReservations';
 import { timestampFormat } from './utils';
 import { OnlineMerger } from './onlineMerge';
+import { syncUpdatedCustomerProfilesToActiveCampaign } from './activeCampaign';
 
 const bq = new BigQuerySimple(googleProjectId)
 const onlineMerger = new OnlineMerger(googleProjectId, datasetId, false)
@@ -89,3 +90,16 @@ http('RemoveDuplicates', async (_: Request, res: Response) => {
     res.status(500).end()
   }
 });
+
+
+http('SyncContactsToAc', async (_: Request, res: Response) => {
+  try {
+    await syncUpdatedCustomerProfilesToActiveCampaign(24)
+    res.status(200).end()
+  } catch (error) {
+    console.log(error)
+    console.log(JSON.stringify(error))
+    res.status(500).end()
+  }
+});
+

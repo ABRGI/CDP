@@ -12,6 +12,17 @@ export type ActiveCampaignContactCreateResponse = {
   }
 }
 
+export type ActiveCampaignField = {
+  title: string,
+  id: string
+}
+
+export type ActiveCampaignCustomFieldsResponse = {
+  fieldOptions: any[],
+  fieldRels: any[],
+  fields: ActiveCampaignField[]
+}
+
 export type ActiveCampaignCustomer = {
   id: string
   email?: string
@@ -20,3 +31,5 @@ export type ActiveCampaignCustomer = {
   level: 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'
   updated: string
 }
+
+export type ActiveCampaignFieldMap = { [name: string]: string }

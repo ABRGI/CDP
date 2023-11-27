@@ -14,7 +14,7 @@ resource "google_cloud_scheduler_job" "fetch_reservations_scheduler" {
   region      = "europe-west1"
   name        = "fetch-reservations-scheduler-job"
   description = "Fetch waiting Nelson reservations"
-  schedule    = "0 4,8,12,16,20 * * *"
+  schedule    = "0 * * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_fetch_pubsub.id
@@ -45,7 +45,6 @@ resource "google_cloud_scheduler_job" "merge_reservations_scheduler" {
     data       = base64encode("notused")
   }
 }
-
 
 resource "google_pubsub_topic" "function_trigger_remove_duplicates_pubsub" {
   name    = "trigger-duplicate-removal-pubsub"

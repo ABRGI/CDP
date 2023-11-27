@@ -162,3 +162,11 @@ export const timestampFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZ'
 export const escapeString = (str: string): string => {
   return str.replace(/'/g, `\\'`)
 }
+
+export const arrayToMap = <T>(keyName: string, array: any[]): { [key: string]: T } => {
+  const map: { [key: string]: T } = {}
+  for (const item of array) {
+    map[item[keyName]] = item
+  }
+  return map
+}

@@ -77,6 +77,7 @@ const fetchSynchronizedActiveCampaignContacts = async (): Promise<{ [customerId:
 
 
 export const syncUpdatedCustomerProfilesToActiveCampaign = async (latestUpdateMonths: number): Promise<void> => {
+  const startTime = new Date().getTime()
   const customers = await fetchActiveCampaignCustomerProfiles(latestUpdateMonths)
   const acContacts = await fetchSynchronizedActiveCampaignContacts()
 
@@ -88,9 +89,18 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (latestUpdateMo
   })
 
   console.log(`Found ${removed.length} Active Campaign contacts to removed.`)
-  // for (const remove of removed) { await removeActiveCampaignContact(remove) }
+  for (const remove of removed) {
+    // await removeActiveCampaignContact(remove)
+    if (new Date().getTime() - startTime > 500000) break;
+  }
   console.log(`Found ${added.length} customer profiles to add to Active Campaign`)
-  // for (const add of added) { await createActiveCampaignContact(add) }
+  for (const add of added) {
+    // await createActiveCampaignContact(add)
+    if (new Date().getTime() - startTime > 500000) break;
+  }
   console.log(`Found ${updated.length} customer profile to update to Active Campaign`)
-  // for (const update of updated) { await updateActiveCampaignContact(acContacts[update.id], update) }
+  for (const update of updated) {
+    // await updateActiveCampaignContact(acContacts[update.id], update)
+    if (new Date().getTime() - startTime > 500000) break;
+  }
 }

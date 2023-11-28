@@ -113,7 +113,7 @@ const removeActiveCampaignContact = async (contact: ActiveCampaignContact): Prom
 
 const fetchActiveCampaignCustomerProfiles = async (latestUpdateMonths: number): Promise<{ [id: string]: ActiveCampaignCustomer }> => {
   const updated = dayjs().subtract(latestUpdateMonths, "months").format()
-  const query = `SELECT * FROM customers WHERE updated>='${updated}' AND email IS NOT NULL AND latestCreated >= '${updated}'`
+  const query = `SELECT * FROM customers WHERE updated>='${updated}' AND email IS NOT NULL AND latestCreated >= '${updated}' AND marketingPermission=true`
   const customers = await bq.query<ActiveCampaignCustomer>(datasetId, query)
   return arrayToMap("id", customers)
 }

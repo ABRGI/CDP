@@ -94,7 +94,7 @@ http('RemoveDuplicates', async (_: Request, res: Response) => {
 
 http('SyncContactsToAc', async (_: Request, res: Response) => {
   try {
-    await syncUpdatedCustomerProfilesToActiveCampaign(24)
+    await syncUpdatedCustomerProfilesToActiveCampaign(true, 24)
     res.status(200).end()
   } catch (error) {
     console.log(error)

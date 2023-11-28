@@ -40,7 +40,7 @@ export const mapGuestValue = (props: { header: string, value: string }): boolean
     return parseInt(value, 10)
   }
   if (guestBools.has(props.header)) {
-    return value === "TRUE"
+    return value === "TRUE" || value === "t" || value === "T" ? true : false
   }
   if (props.header === "mobile") {
     return value.trim().replace(/ /g, "").replace(/^0/, "+358")

@@ -37,19 +37,40 @@ const getCustomerActiveCampaignContactValue = (fields: ActiveCampaignFieldMap, c
   }
 }
 
-const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<void> => {
+const getActiveCampaignContactByEmail = async (email: string): Promise<string> => {
+  const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts?email=${email}`, {
+    method: 'GET',
+    headers: acHeaders
+  })
+  if (response.status >= 300) {
+    throw Error(`Getting contact by email failed with status ${response.status}`)
+  }
+  const responseJson = await response.json()
+  return responseJson.contacts[0].id
+}
+
+export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<void> => {
   const contact = getCustomerActiveCampaignContactValue(fields, customer)
   const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts`, {
     method: 'POST',
     headers: acHeaders,
     body: JSON.stringify({ contact })
   })
-  if (response.status >= 300) {
+  let contactId = ""
+  if (response.status < 300) {
+    const responseJson: ActiveCampaignContactCreateResponse = await response.json()
+    contactId = responseJson.contact.id
+  }
+  else if (response.status === 422) {
+    contactId = await getActiveCampaignContactByEmail(customer.email!)
+    contact.contactId = contactId
+    await updateActiveCampaignContact(fields, contact, customer)
+  }
+  else if (response.status >= 300) {
     throw Error(`Failed to create contact with status: ${response.status}`)
   }
-  const responseJson: ActiveCampaignContactCreateResponse = await response.json()
   await bq.insertOne(datasetId, 'acContacts', {
-    contactId: responseJson.contact.id,
+    contactId,
     customerId: customer.id,
     value: JSON.stringify(contact),
     updated: customer.updated

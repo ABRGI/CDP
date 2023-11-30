@@ -378,6 +378,12 @@ resource "google_bigquery_table" "guests_table" {
         "description" : "Guest nationality, e.g. 'FIN'"
       },
       {
+        "name" : "city",
+        "type" : "STRING",
+        "mode" : "NULLABLE",
+        "description" : "Guest home city"
+      },
+      {
         "name" : "email",
         "type" : "STRING",
         "mode" : "NULLABLE",
@@ -1072,6 +1078,3 @@ EOF
     use_legacy_sql = false
   }
 }
-
-
-

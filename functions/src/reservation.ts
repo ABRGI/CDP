@@ -45,7 +45,7 @@ export type Reservation = {
   state: 'CONFIRMED' | 'CANCELLED' | 'PENDING_CONFIRMATION' | 'BLOCKED'
   notifyCustomer: boolean    // TRUE|FALSE
   isOverrided: boolean       // TRUE|FALSE
-  type: number,              // 1-3
+  type: number,              // 1 = Normal, 2 = Group, 3 = Contract
   modifiedBy?: string,               // '', 'xxxx.yyyy@securitas.fi'
   marketingPermission: boolean       // TRUE|FALSE,
   customerEmailReal?: string         // '', 'jorma-petteri.luukku@luukku.com',
@@ -183,7 +183,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookings: 1,
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
       totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
-      totalGroupBookings: 0,
+      totalGroupBookings: r.type === 2 ? 1 : 0,
+      totalContractBookings: r.type === 3 ? 1 : 0,
       totalChildrenBookings: 0,
       blocked: r.state === "BLOCKED",
 
@@ -288,6 +289,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalBookingCancellations: c.totalBookingCancellations + nc.totalBookingCancellations,
     totalBookingsPending: c.totalBookingsPending + nc.totalBookingsPending,
     totalGroupBookings: c.totalGroupBookings + nc.totalGroupBookings,
+    totalContractBookings: c.totalContractBookings + nc.totalContractBookings,
 
     blocked: c.blocked || nc.blocked,
 

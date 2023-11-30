@@ -42,6 +42,7 @@ export type Customer = {
   totalBusinessBookings: number
   totalGroupBookings: number
   totalChildrenBookings: number
+  totalContractBookings: number
 
   totalBookingsAsGuest: number
   totalBookings: number

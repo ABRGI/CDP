@@ -11,6 +11,8 @@ export type Guest = {
   firstName?: string,
   lastName?: string,
   nationality?: string     // 'FIN'
+  city?: string
+  postalCode?: string,
   email?: string,
   mobile?: string,
   ssn?: string,
@@ -71,6 +73,8 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       phoneNumber: g.mobile,
       dateOfBirth: g.dateOfBirth,
       isoCountryCode: g.isoCountryCode,
+      city: g.city,
+      postalCode: g.postalCode,
       includesChildren: typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false,
       level: 'Guest',
       lifetimeSpend: 0,
@@ -103,6 +107,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       totalBookingCancellations: 0,
       totalBookingsPending: 0,
       totalGroupBookings: 0,
+      totalContractBookings: 0,
       totalChildrenBookings: 0,
 
       blocked: r.state === "BLOCKED",
@@ -142,9 +147,11 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
   const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
   return {
     ...c,
-    dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
-    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
-    includesChildren: c.includesChildren || nc.includesChildren,
+    dateOfBirth: nc.dateOfBirth || c.dateOfBirth,
+    isoCountryCode: nc.isoCountryCode || c.isoCountryCode,
+    includesChildren: nc.includesChildren || c.includesChildren,
+    city: g.city || c.city,
+    postalCode: g.postalCode || c.postalCode,
     level: c.level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
 
@@ -182,7 +189,6 @@ export const addGuestToCustomer = (c: Customer, g: Guest): Customer => {
   const isChild = typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false
   return {
     ...c,
-    totalGroupBookings: c.totalGroupBookings + (g.roomAlias > 1 ? 1 : 0),
     totalChildrenBookings: c.totalChildrenBookings + (isChild ? 1 : 0),
     includesChildren: c.includesChildren || isChild,
     bookingPeopleCounts,
@@ -201,6 +207,8 @@ export const fillInCustomerFromGuest = (c: Customer, g: Guest): Customer => {
     ...c,
     dateOfBirth: c.dateOfBirth || g.dateOfBirth,
     email: c.email || g.email,
+    city: c.city || g.city,
+    postalCode: c.postalCode || g.postalCode,
     marketingPermission: c.marketingPermission || g.marketingPermission,
     phoneNumber: c.phoneNumber || g.mobile
   }

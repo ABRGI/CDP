@@ -919,7 +919,7 @@ WITH segments AS (
   DATE_DIFF(CURRENT_DATE(), EXTRACT(DATE FROM latestCreated), MONTH) as monthsSinceReservation,
   ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers`)
-SELECT id, email,
+SELECT id, segments.email as email,
   CASE
     WHEN avgNightsPerBooking >= 1 AND avgNightsPerBooking <= 5 THEN CAST(ROUND(avgNightsPerBooking) as STRING)
     WHEN avgNightsPerBooking <= 10 THEN '6-10'
@@ -998,12 +998,17 @@ SELECT id, email,
   IFNULL(voucherKeys[SAFE_OFFSET(0)].key, 'None') as primaryVoucherKey,
   voucherCategory,
   cancellationPercentage,
-  CAST(monthsSinceReservation AS NUMERIC) as monthsSinceReservation
-  FROM segments
+  CAST(monthsSinceReservation AS NUMERIC) as monthsSinceReservation,
+  i.happenings as happeningInterests,
+  i.hotelServices as hotelServiceInterests,
+  i.places as placeInterests,
+  i.values as valueInterests
+  FROM segments LEFT OUTER JOIN `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customerInterests` as i ON segments.email = i.email
 EOF
     use_legacy_sql = false
   }
 }
+
 
 
 resource "google_bigquery_routine" "map_voucher_category_reservations_routine" {

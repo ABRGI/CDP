@@ -11,6 +11,7 @@ export type Customer = {
   dateOfBirth?: string
   gender?: 'Male' | 'Female' | 'Other'
   streetAddress?: string
+  postalCode?: string
   city?: string
   isoCountryCode?: string                                      // ISO country code, e.g. FI
   memberId?: number
@@ -42,6 +43,7 @@ export type Customer = {
   totalBusinessBookings: number
   totalGroupBookings: number
   totalChildrenBookings: number
+  totalContractBookings: number
 
   totalBookingsAsGuest: number
   totalBookings: number

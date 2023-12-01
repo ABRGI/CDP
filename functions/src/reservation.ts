@@ -45,7 +45,7 @@ export type Reservation = {
   state: 'CONFIRMED' | 'CANCELLED' | 'PENDING_CONFIRMATION' | 'BLOCKED'
   notifyCustomer: boolean    // TRUE|FALSE
   isOverrided: boolean       // TRUE|FALSE
-  type: number,              // 1-3
+  type: number,              // 1 = Normal, 2 = Group, 3 = Contract
   modifiedBy?: string,               // '', 'xxxx.yyyy@securitas.fi'
   marketingPermission: boolean       // TRUE|FALSE,
   customerEmailReal?: string         // '', 'jorma-petteri.luukku@luukku.com',
@@ -183,7 +183,8 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       totalBookings: 1,
       totalBookingCancellations: r.state === "CANCELLED" ? 1 : 0,
       totalBookingsPending: r.state === "PENDING_CONFIRMATION" ? 1 : 0,
-      totalGroupBookings: 0,
+      totalGroupBookings: r.type === 2 ? 1 : 0,
+      totalContractBookings: r.type === 3 ? 1 : 0,
       totalChildrenBookings: 0,
       blocked: r.state === "BLOCKED",
 
@@ -197,6 +198,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       profileIds: [{ id: r.id, type: "Reservation" }],
 
       city: r.customerCity,
+      postalCode: r.customerPostalCode,
       streetAddress: r.customerAddress,
 
       voucherKeys: r.voucherKeys.map(vk => ({ reservationId: r.id, key: vk })),
@@ -252,11 +254,13 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     firstName: nc.firstName || c.firstName,
     lastName: nc.lastName || c.lastName,
     phoneNumber: nc.phoneNumber || c.phoneNumber,
-    dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
-    memberId: c.memberId || nc.memberId,
-    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
+    dateOfBirth: nc.dateOfBirth || c.dateOfBirth,
+    memberId: nc.memberId || c.memberId,
+    isoCountryCode: nc.isoCountryCode || c.isoCountryCode,
     level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
+    city: nc.city || c.city,
+    postalCode: nc.postalCode || c.postalCode,
 
     bookingNightsCounts: c.bookingNightsCounts.concat(nc.bookingNightsCounts),
     bookingPeopleCounts: c.bookingPeopleCounts.concat(nc.bookingPeopleCounts),
@@ -288,6 +292,7 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     totalBookingCancellations: c.totalBookingCancellations + nc.totalBookingCancellations,
     totalBookingsPending: c.totalBookingsPending + nc.totalBookingsPending,
     totalGroupBookings: c.totalGroupBookings + nc.totalGroupBookings,
+    totalContractBookings: c.totalContractBookings + nc.totalContractBookings,
 
     blocked: c.blocked || nc.blocked,
 

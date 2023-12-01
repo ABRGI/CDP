@@ -197,21 +197,15 @@ describe('Merge tests', () => {
     const merger = new CustomerMerger()
 
     const reservation = generateNewReservation()
+    reservation.type = 2
     merger.addReservation(reservation)
 
     const guest = generateNewGuest(reservation.id)
-    guest.guestIndex = 1
-    guest.roomAlias = 2
     merger.addGuest(guest)
-
-    const guest2 = generateNewGuest(reservation.id)
-    guest2.guestIndex = 2
-    guest2.roomAlias = 1
-    merger.addGuest(guest2)
 
     const customer = merger.getCustomers()[0]
     expect(customer.totalGroupBookings).toEqual(1)
-    expect(customer.bookingPeopleCounts).toEqual([3])
+    expect(customer.bookingPeopleCounts).toEqual([2])
   })
 
   test('Should update guest for customer not booking the reservation', () => {

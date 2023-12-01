@@ -4,11 +4,13 @@ import { createReadStream } from 'fs'
 import { writeFileSync } from 'fs'
 const csv = require('csv-parser')
 
-export const loadCsv = async <T>(filename: string, mapValues?: (props: { header: string, value: string }) => any, defaults?: { [key: string]: any }): Promise<T[]> => {
+export const loadCsv = async <T>(filename: string,
+  mapValues?: (props: { header: string, value: string }) => any, defaults?: { [key: string]: any },
+  separator: string = ','): Promise<T[]> => {
   return await new Promise((resolve, reject) => {
     const results: T[] = []
     createReadStream(filename)
-      .pipe(csv({ mapHeaders: ({ header }: { header: string }) => camelize(header), mapValues }))
+      .pipe(csv({ separator, mapHeaders: ({ header }: { header: string }) => camelize(header), mapValues }))
       .on('error', (error: any) => reject(error))
       .on('data', (data: any) => results.push({ ...data, ...defaults }))
       .on('end', () => {

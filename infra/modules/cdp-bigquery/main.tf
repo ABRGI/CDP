@@ -1078,3 +1078,24 @@ EOF
     use_legacy_sql = false
   }
 }
+
+
+resource "google_bigquery_table" "allocations_table" {
+  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id            = "allocations"
+  deletion_protection = false
+  view {
+    query          = <<EOF
+SELECT r.id as id, ANY_VALUE(r.hotel) as hotel, ANY_VALUE(r.totalPaid) as totalPaid,
+  ANY_VALUE(r.created) as created,
+  ANY_VALUE(r.checkIn) as checkIn, ANY_VALUE(r.checkOut) as checkOut,
+  MAX(roomAlias) as rooms, DATETIME_DIFF(MIN(r.checkOut), MAX(r.checkIn), DAY) as days
+  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.guests` as g,
+      `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.reservations` as r
+  WHERE r.id = g.reservationId GROUP BY r.id ORDER BY r.id DESC
+EOF
+    use_legacy_sql = false
+  }
+}

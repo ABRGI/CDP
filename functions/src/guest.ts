@@ -12,6 +12,7 @@ export type Guest = {
   lastName?: string,
   nationality?: string     // 'FIN'
   city?: string
+  postalCode?: string,
   email?: string,
   mobile?: string,
   ssn?: string,
@@ -73,6 +74,7 @@ export const createCustomerFromGuest = (r: MinimalReservation, g: Guest): Custom
       dateOfBirth: g.dateOfBirth,
       isoCountryCode: g.isoCountryCode,
       city: g.city,
+      postalCode: g.postalCode,
       includesChildren: typeof g.dateOfBirth === "string" ? dayjs().diff(dayjs(g.dateOfBirth), "years") < 18 : false,
       level: 'Guest',
       lifetimeSpend: 0,
@@ -145,10 +147,11 @@ export const mergeGuestToCustomer = (c: Customer, r: MinimalReservation, g: Gues
   const { weekendDays, weekDays } = calculateDaysBetween(r.checkIn, r.checkOut)
   return {
     ...c,
-    dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
-    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
-    includesChildren: c.includesChildren || nc.includesChildren,
-    city: c.city || g.city,
+    dateOfBirth: nc.dateOfBirth || c.dateOfBirth,
+    isoCountryCode: nc.isoCountryCode || c.isoCountryCode,
+    includesChildren: nc.includesChildren || c.includesChildren,
+    city: g.city || c.city,
+    postalCode: g.postalCode || c.postalCode,
     level: c.level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
 
@@ -205,6 +208,7 @@ export const fillInCustomerFromGuest = (c: Customer, g: Guest): Customer => {
     dateOfBirth: c.dateOfBirth || g.dateOfBirth,
     email: c.email || g.email,
     city: c.city || g.city,
+    postalCode: c.postalCode || g.postalCode,
     marketingPermission: c.marketingPermission || g.marketingPermission,
     phoneNumber: c.phoneNumber || g.mobile
   }

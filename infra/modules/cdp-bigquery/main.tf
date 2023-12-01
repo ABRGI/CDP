@@ -384,6 +384,12 @@ resource "google_bigquery_table" "guests_table" {
         "description" : "Guest home city"
       },
       {
+        "name" : "postalCode",
+        "type" : "STRING",
+        "mode" : "NULLABLE",
+        "description" : "Guest postal code"
+      },
+      {
         "name" : "email",
         "type" : "STRING",
         "mode" : "NULLABLE",
@@ -513,6 +519,12 @@ resource "google_bigquery_table" "customers_table" {
         "type" : "STRING",
         "mode" : "NULLABLE",
         "description" : "City of customer"
+      },
+      {
+        "name" : "postalCode",
+        "type" : "STRING",
+        "mode" : "NULLABLE",
+        "description" : "Guest postal code"
       },
       {
         "name" : "isoCountryCode",
@@ -657,6 +669,12 @@ resource "google_bigquery_table" "customers_table" {
         "type" : "INTEGER",
         "mode" : "REQUIRED",
         "description" : "Total bookings"
+      },
+      {
+        "name" : "totalContractBookings",
+        "type" : "INTEGER",
+        "mode" : "REQUIRED",
+        "description" : "Total contract bookings"
       },
       {
         "name" : "totalBookingCancellations",

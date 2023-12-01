@@ -53,7 +53,6 @@ export const fetchWaitingReservations = async () => {
             delete ((g as any).completedCheckIn)
             delete ((g as any).address)
             delete ((g as any).idUploaded)
-            delete ((g as any).postalCode)
             delete ((g as any).signed)
             g.guestIndex = (g as any).index
             delete ((g as any).index)

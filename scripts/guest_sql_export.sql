@@ -9,6 +9,8 @@ SELECT
     first_name,
     last_name,
     nationality,
+    city,
+    postal_code,
     email,
     mobile,
     ssn,

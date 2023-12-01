@@ -198,6 +198,7 @@ export const createCustomerFromReservation = (r: Reservation): Customer | undefi
       profileIds: [{ id: r.id, type: "Reservation" }],
 
       city: r.customerCity,
+      postalCode: r.customerPostalCode,
       streetAddress: r.customerAddress,
 
       voucherKeys: r.voucherKeys.map(vk => ({ reservationId: r.id, key: vk })),
@@ -253,11 +254,13 @@ export const mergeReservationToCustomer = (c: Customer, r: Reservation): Custome
     firstName: nc.firstName || c.firstName,
     lastName: nc.lastName || c.lastName,
     phoneNumber: nc.phoneNumber || c.phoneNumber,
-    dateOfBirth: c.dateOfBirth || nc.dateOfBirth,
-    memberId: c.memberId || nc.memberId,
-    isoCountryCode: c.isoCountryCode || nc.isoCountryCode,
+    dateOfBirth: nc.dateOfBirth || c.dateOfBirth,
+    memberId: nc.memberId || c.memberId,
+    isoCountryCode: nc.isoCountryCode || c.isoCountryCode,
     level,
     lifetimeSpend: c.lifetimeSpend + nc.lifetimeSpend,
+    city: nc.city || c.city,
+    postalCode: nc.postalCode || c.postalCode,
 
     bookingNightsCounts: c.bookingNightsCounts.concat(nc.bookingNightsCounts),
     bookingPeopleCounts: c.bookingPeopleCounts.concat(nc.bookingPeopleCounts),

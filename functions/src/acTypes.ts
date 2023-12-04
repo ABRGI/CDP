@@ -1,5 +1,5 @@
 
-export type ActiveCampaignLevel = 'None' | 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest',
+export type ActiveCampaignLevel = 'None' | 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'
 export type ActiveCampaignBoolean = 'Yes' | 'No'
 
 export type ActiveCampaignContact = {

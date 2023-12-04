@@ -1,4 +1,3 @@
-import dayjs from "dayjs"
 import { BigQuerySimple } from "./bigquery"
 import { activeCampaignApiToken, activeCampaignBaseUrl, datasetId, googleProjectId } from "./env"
 import { ActiveCampaignContact, ActiveCampaignContactCreateResponse, ActiveCampaignCustomFieldsResponse, ActiveCampaignCustomer, ActiveCampaignFieldMap } from "./acTypes"
@@ -30,10 +29,10 @@ const getCustomerActiveCampaignContactValue = (fields: ActiveCampaignFieldMap, c
     email: customer.email,
     firstName: customer.firstName,
     lastName: customer.lastName,
-    fieldValues: [{
-      field: fields["level"],
-      value: customer.level
-    }]
+    fieldValues: Object.keys(fields).map(key => ({
+      field: fields[key],
+      value: customer[key]
+    })).filter(fv => typeof fv.value !== "undefined")
   }
 }
 
@@ -111,10 +110,8 @@ const removeActiveCampaignContact = async (contact: ActiveCampaignContact): Prom
 }
 
 
-const fetchActiveCampaignCustomerProfiles = async (latestUpdateMonths: number): Promise<{ [id: string]: ActiveCampaignCustomer }> => {
-  const updated = dayjs().subtract(latestUpdateMonths, "months").format('YYYY-MM-DDTHH:mm:ss')
-  const query = `SELECT * FROM customers WHERE updated>='${updated}' AND email IS NOT NULL AND latestCheckInDate >= '${updated}' AND (marketingPermission=true or memberId IS NOT NULL)`
-  const customers = await bq.query<ActiveCampaignCustomer>(datasetId, query)
+const fetchActiveCampaignCustomerProfiles = async (): Promise<{ [id: string]: ActiveCampaignCustomer }> => {
+  const customers = await bq.query<ActiveCampaignCustomer>(datasetId, `SELECT * FROM acSource`)
   return arrayToMap("id", customers)
 }
 
@@ -123,10 +120,10 @@ const fetchSynchronizedActiveCampaignContacts = async (): Promise<{ [customerId:
 }
 
 
-export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolean, latestUpdateMonths: number): Promise<void> => {
+export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolean): Promise<void> => {
   const acFields = await getActiveCampaignCustomFields()
   const startTime = new Date().getTime()
-  const customers = await fetchActiveCampaignCustomerProfiles(latestUpdateMonths)
+  const customers = await fetchActiveCampaignCustomerProfiles()
   const acContacts = await fetchSynchronizedActiveCampaignContacts()
 
   const removed = Object.values(acContacts).filter(acc => !customers[acc.customerId])

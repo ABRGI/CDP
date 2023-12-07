@@ -48,7 +48,7 @@ WITH segments AS (
     firstName,
     lastName,
     ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage,
-    city,
+    city as City,
     latestHotel as hotel1,
     IF(includesChildren, 'Yes', 'No') as includesChildren,
     IF(avgPeoplePerBooking <= 1, 'Yes', 'No') as single,

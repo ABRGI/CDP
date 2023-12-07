@@ -65,3 +65,51 @@ resource "google_bigquery_job" "load_hotels_job" {
     autodetect        = false
   }
 }
+
+
+resource "google_bigquery_table" "hotel_metrics_table" {
+  project    = var.project_id
+  dataset_id = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id   = "hotelMetrics"
+
+  deletion_protection = false
+  schema = jsonencode(
+    [
+      {
+        "name" : "created",
+        "type" : "DATE",
+        "mode" : "REQUIRED",
+        "description" : "Date of metric creation"
+      },
+      {
+        "name" : "date",
+        "type" : "DATE",
+        "mode" : "REQUIRED",
+        "description" : "Date of metrics"
+      },
+      {
+        "name" : "label",
+        "type" : "STRING",
+        "mode" : "REQUIRED",
+        "description" : "Hotel label"
+      },
+      {
+        "name" : "customerType",
+        "type" : "STRING",
+        "mode" : "REQUIRED",
+        "description" : "Type of customer (Normal, Business, Group)"
+      },
+      {
+        "name" : "allocation",
+        "type" : "INTEGER",
+        "mode" : "REQUIRED",
+        "description" : "Number of rooms allocated"
+      },
+      {
+        "name" : "revenue",
+        "type" : "FLOAT",
+        "mode" : "REQUIRED",
+        "description" : "Amount of revenue from allocations"
+      },
+  ])
+}

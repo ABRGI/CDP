@@ -1,7 +1,7 @@
 import { BigQuerySimple } from "./bigquery"
 import { activeCampaignApiToken, activeCampaignBaseUrl, datasetId, googleProjectId } from "./env"
 import { ActiveCampaignContact, ActiveCampaignContactCreateResponse, ActiveCampaignCustomFieldsResponse, ActiveCampaignCustomer, ActiveCampaignFieldMap } from "./acTypes"
-import { arrayToMap } from "./utils"
+import { arrayToMap, sleep } from "./utils"
 import fetch from "node-fetch"
 const bq = new BigQuerySimple(googleProjectId)
 
@@ -12,7 +12,7 @@ const acHeaders = {
 
 
 export const getActiveCampaignCustomFields = async (): Promise<ActiveCampaignFieldMap> => {
-  const response = await fetch(`${activeCampaignBaseUrl}/api/3/fields`, {
+  const response = await fetch(`${activeCampaignBaseUrl}/api/3/fields?offset=0&limit=200`, {
     method: 'GET',
     headers: acHeaders
   })
@@ -48,7 +48,7 @@ const getActiveCampaignContactByEmail = async (email: string): Promise<string> =
   return responseJson.contacts[0].id
 }
 
-export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<void> => {
+export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<number> => {
   const contact = getCustomerActiveCampaignContactValue(fields, customer)
   const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts`, {
     method: 'POST',
@@ -59,21 +59,23 @@ export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap
   if (response.status < 300) {
     const responseJson: ActiveCampaignContactCreateResponse = await response.json()
     contactId = responseJson.contact.id
+    await bq.insertOne(datasetId, 'acContacts', {
+      contactId,
+      customerId: customer.id,
+      value: JSON.stringify(contact),
+      updated: customer.updated
+    })
+    return 1
   }
   else if (response.status === 422) {
     contactId = await getActiveCampaignContactByEmail(customer.email!)
     contact.contactId = contactId
     await updateActiveCampaignContact(fields, contact, customer)
+    return 3
   }
-  else if (response.status >= 300) {
+  else {
     throw Error(`Failed to create contact with status: ${response.status}`)
   }
-  await bq.insertOne(datasetId, 'acContacts', {
-    contactId,
-    customerId: customer.id,
-    value: JSON.stringify(contact),
-    updated: customer.updated
-  })
 }
 
 const updateActiveCampaignContact = async (fields: ActiveCampaignFieldMap, contact: ActiveCampaignContact, customer: ActiveCampaignCustomer): Promise<void> => {

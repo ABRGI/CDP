@@ -47,7 +47,7 @@ resource "google_bigquery_table" "hotels_table" {
 
 resource "google_bigquery_job" "load_hotels_job" {
   project  = var.project_id
-  job_id   = "load_hotels_job_5"
+  job_id   = "load_hotels_job_6"
   location = "EU"
 
   load {

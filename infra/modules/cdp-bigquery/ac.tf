@@ -1,3 +1,4 @@
+
 resource "google_bigquery_table" "ac_contacts" {
   project    = var.project_id
   dataset_id = google_bigquery_dataset.cdp_dataset.dataset_id

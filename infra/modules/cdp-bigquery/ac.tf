@@ -82,7 +82,7 @@ WITH segments AS (
     segments.firstName as firstName,
     lastName,
     cancellationPercentage,
-    city,
+    city as City,
     hotel1,
     includesChildren,
     single,
@@ -106,7 +106,7 @@ WITH segments AS (
     voucherCategory,
 
     IF((SELECT 'festarit ja keikat' IN UNNEST(i.happenings)), 'Yes', 'No') as interestPartiesAndGigs,
-    IF((SELECT 'urheilutapahtumat' IN UNNEST(i.happenings)), 'Yes', 'No') as interestSportsEvents,
+    IF((SELECT 'urheilutapahtumat' IN UNNEST(i.happenings)), 'Yes', 'No') as interestSportEvents,
     IF((SELECT 'taide' IN UNNEST(i.happenings)), 'Yes', 'No') as interestArts,
     IF((SELECT 'teatteri' IN UNNEST(i.happenings)), 'Yes', 'No') as interestTheater,
     IF((SELECT 'korkeakulttuuri (baletti/ooppera)' IN UNNEST(i.happenings)), 'Yes', 'No') as interestBalletAndOpera,
@@ -129,7 +129,7 @@ WITH segments AS (
 
     IF((SELECT 'baarit' IN UNNEST(i.places)), 'Yes', 'No') as interestBars,
     IF((SELECT 'turistinähtävyydet' IN UNNEST(i.places)), 'Yes', 'No') as interestTouristAttractions,
-    IF((SELECT 'ruoka ja ravintolat' IN UNNEST(i.places)), 'Yes', 'No') as interestFoodAndRestaurant,
+    IF((SELECT 'ruoka ja ravintolat' IN UNNEST(i.places)), 'Yes', 'No') as interestFoodAndRestaurants,
     IF((SELECT 'museot' IN UNNEST(i.places)), 'Yes', 'No') as interestMuseums,
     IF((SELECT 'luontokohteet' IN UNNEST(i.places)), 'Yes', 'No') as interestNatureDestinations,
 

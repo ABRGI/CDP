@@ -136,3 +136,27 @@ EOF
     use_legacy_sql = false
   }
 }
+
+resource "google_pubsub_topic" "function_trigger_hotel_metrics_pubsub" {
+  name    = "trigger-hotel-metrics-pubsub"
+  project = var.project_id
+
+  message_storage_policy {
+    allowed_persistence_regions = [
+      "europe-west1",
+    ]
+  }
+}
+
+resource "google_cloud_scheduler_job" "hotel_metrics_create_scheduler" {
+  project     = var.project_id
+  region      = "europe-west1"
+  name        = "trigger-hotel-metrics-pubsub"
+  description = "Run hotel metrics creation"
+  schedule    = "0 9 * * *"
+
+  pubsub_target {
+    topic_name = google_pubsub_topic.function_trigger_hotel_metrics_pubsub.id
+    data       = base64encode("notused")
+  }
+}

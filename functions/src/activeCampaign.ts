@@ -1,8 +1,7 @@
-import dayjs from "dayjs"
 import { BigQuerySimple } from "./bigquery"
 import { activeCampaignApiToken, activeCampaignBaseUrl, datasetId, googleProjectId } from "./env"
 import { ActiveCampaignContact, ActiveCampaignContactCreateResponse, ActiveCampaignCustomFieldsResponse, ActiveCampaignCustomer, ActiveCampaignFieldMap } from "./acTypes"
-import { arrayToMap } from "./utils"
+import { arrayToMap, sleep } from "./utils"
 import fetch from "node-fetch"
 const bq = new BigQuerySimple(googleProjectId)
 
@@ -13,7 +12,7 @@ const acHeaders = {
 
 
 export const getActiveCampaignCustomFields = async (): Promise<ActiveCampaignFieldMap> => {
-  const response = await fetch(`${activeCampaignBaseUrl}/api/3/fields`, {
+  const response = await fetch(`${activeCampaignBaseUrl}/api/3/fields?offset=0&limit=200`, {
     method: 'GET',
     headers: acHeaders
   })
@@ -30,10 +29,10 @@ const getCustomerActiveCampaignContactValue = (fields: ActiveCampaignFieldMap, c
     email: customer.email,
     firstName: customer.firstName,
     lastName: customer.lastName,
-    fieldValues: [{
-      field: fields["level"],
-      value: customer.level
-    }]
+    fieldValues: Object.keys(fields).map(key => ({
+      field: fields[key],
+      value: customer[key]
+    })).filter(fv => typeof fv.value !== "undefined")
   }
 }
 
@@ -49,7 +48,7 @@ const getActiveCampaignContactByEmail = async (email: string): Promise<string> =
   return responseJson.contacts[0].id
 }
 
-export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<void> => {
+export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<number> => {
   const contact = getCustomerActiveCampaignContactValue(fields, customer)
   const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts`, {
     method: 'POST',
@@ -60,21 +59,23 @@ export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap
   if (response.status < 300) {
     const responseJson: ActiveCampaignContactCreateResponse = await response.json()
     contactId = responseJson.contact.id
+    await bq.insertOne(datasetId, 'acContacts', {
+      contactId,
+      customerId: customer.id,
+      value: JSON.stringify(contact),
+      updated: customer.updated
+    })
+    return 1
   }
   else if (response.status === 422) {
     contactId = await getActiveCampaignContactByEmail(customer.email!)
     contact.contactId = contactId
     await updateActiveCampaignContact(fields, contact, customer)
+    return 3
   }
-  else if (response.status >= 300) {
+  else {
     throw Error(`Failed to create contact with status: ${response.status}`)
   }
-  await bq.insertOne(datasetId, 'acContacts', {
-    contactId,
-    customerId: customer.id,
-    value: JSON.stringify(contact),
-    updated: customer.updated
-  })
 }
 
 const updateActiveCampaignContact = async (fields: ActiveCampaignFieldMap, contact: ActiveCampaignContact, customer: ActiveCampaignCustomer): Promise<void> => {
@@ -111,10 +112,8 @@ const removeActiveCampaignContact = async (contact: ActiveCampaignContact): Prom
 }
 
 
-const fetchActiveCampaignCustomerProfiles = async (latestUpdateMonths: number): Promise<{ [id: string]: ActiveCampaignCustomer }> => {
-  const updated = dayjs().subtract(latestUpdateMonths, "months").format()
-  const query = `SELECT * FROM customers WHERE updated>='${updated}' AND email IS NOT NULL AND latestCreated >= '${updated}' AND (marketingPermission=true or memberId IS NOT NULL)`
-  const customers = await bq.query<ActiveCampaignCustomer>(datasetId, query)
+const fetchActiveCampaignCustomerProfiles = async (): Promise<{ [id: string]: ActiveCampaignCustomer }> => {
+  const customers = await bq.query<ActiveCampaignCustomer>(datasetId, `SELECT * FROM acSource`)
   return arrayToMap("id", customers)
 }
 
@@ -123,10 +122,10 @@ const fetchSynchronizedActiveCampaignContacts = async (): Promise<{ [customerId:
 }
 
 
-export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolean, latestUpdateMonths: number): Promise<void> => {
+export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolean): Promise<void> => {
   const acFields = await getActiveCampaignCustomFields()
   const startTime = new Date().getTime()
-  const customers = await fetchActiveCampaignCustomerProfiles(latestUpdateMonths)
+  const customers = await fetchActiveCampaignCustomerProfiles()
   const acContacts = await fetchSynchronizedActiveCampaignContacts()
 
   const removed = Object.values(acContacts).filter(acc => !customers[acc.customerId])

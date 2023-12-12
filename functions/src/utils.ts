@@ -172,3 +172,11 @@ export const arrayToMap = <T>(keyName: string, array: any[]): { [key: string]: T
   }
   return map
 }
+
+export const sleep = async (milliSeconds: number): Promise<void> => {
+  await new Promise((resolve, _) => {
+    setTimeout(() => {
+      resolve(undefined)
+    }, milliSeconds)
+  })
+}

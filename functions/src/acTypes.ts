@@ -1,4 +1,7 @@
 
+export type ActiveCampaignLevel = 'None' | 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'
+export type ActiveCampaignBoolean = 'Yes' | 'No'
+
 export type ActiveCampaignContact = {
   contactId: number
   customerId: string
@@ -23,12 +26,11 @@ export type ActiveCampaignCustomFieldsResponse = {
   fields: ActiveCampaignField[]
 }
 
-export type ActiveCampaignCustomer = {
-  id: string
-  email?: string
-  firstName?: string
-  lastName?: string
-  level: 'VIP' | 'Stable' | 'Developing' | 'New' | 'Guest'
+export type ActiveCampaignCustomer = any & {
+  id: string,
+  email: string,
+  firstName?: string,
+  lastName?: string,
   updated: string
 }
 

@@ -31,6 +31,7 @@ module "project_basics" {
 }
 
 module "bigquery_datasets" {
-  source     = "../modules/cdp-bigquery"
-  project_id = google_project.project.project_id
+  source      = "../modules/cdp-bigquery"
+  environment = "production"
+  project_id  = google_project.project.project_id
 }

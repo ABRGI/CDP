@@ -94,3 +94,17 @@ jobs:
           timeout: 540
           memory_mb: 4096
           env_vars: 'GCP_PROJECT_ID=${{vars.PRODUCTION_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.PRODUCTION_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.PRODUCTION_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.PRODUCTION_ACTIVE_CAMPAIGN_API_TOKEN}}'
+
+      - name: Deploy hotel metrics creation
+        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        with:
+          name: 'UpdateHotelMetrics'
+          project_id: '${{vars.PRODUCTION_GCP_PROJECT_ID}}'
+          runtime: 'nodejs18'
+          source_dir: ${{env.source-directory}}
+          region: 'europe-west1'
+          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
+          event_trigger_resource: 'projects/${{vars.PRODUCTION_GCP_PROJECT_ID}}/topics/trigger-hotel-metrics-pubsub'
+          timeout: 540
+          memory_mb: 2048
+          env_vars: 'GCP_PROJECT_ID=${{vars.PRODUCTION_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.PRODUCTION_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.PRODUCTION_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.PRODUCTION_ACTIVE_CAMPAIGN_API_TOKEN}}'

@@ -7,6 +7,7 @@ import { fetchWaitingReservations } from './fetchWaitingReservations';
 import { timestampFormat } from './utils';
 import { OnlineMerger } from './onlineMerge';
 import { syncUpdatedCustomerProfilesToActiveCampaign } from './activeCampaign';
+import { updateHotelMetrics } from './hotelMetrics';
 
 const bq = new BigQuerySimple(googleProjectId)
 const onlineMerger = new OnlineMerger(googleProjectId, datasetId, false)
@@ -94,7 +95,7 @@ http('RemoveDuplicates', async (_: Request, res: Response) => {
 
 http('SyncContactsToAc', async (_: Request, res: Response) => {
   try {
-    await syncUpdatedCustomerProfilesToActiveCampaign(true, 24)
+    await syncUpdatedCustomerProfilesToActiveCampaign(true)
     res.status(200).end()
   } catch (error) {
     console.log(error)
@@ -103,3 +104,13 @@ http('SyncContactsToAc', async (_: Request, res: Response) => {
   }
 });
 
+http('UpdateHotelMetrics', async (_: Request, res: Response) => {
+  try {
+    await updateHotelMetrics()
+    res.status(200).end()
+  } catch (error) {
+    console.log(error)
+    console.log(JSON.stringify(error))
+    res.status(500).end()
+  }
+})

@@ -14,8 +14,9 @@ export const updateHotelMetrics = async (): Promise<void> => {
 
   const metrics: HotelMetrics = {}
   for (const alloc of allocations) {
-    let startDate = dayjs(alloc.checkIn)
-    while (startDate.isBefore(dayjs(alloc.checkOut).startOf("day"))) {
+    let startDate = dayjs(alloc.checkIn).endOf("day")
+    let days = 0
+    while (days < alloc.days) {
       const date = startDate.format("YYYY-MM-DD")
       if (!(date in metrics)) {
         metrics[date] = {}
@@ -31,7 +32,8 @@ export const updateHotelMetrics = async (): Promise<void> => {
       }
       metrics[date][alloc.hotel][alloc.type].allocation += alloc.rooms
       metrics[date][alloc.hotel][alloc.type].revenue += alloc.totalPaid
-      startDate = startDate.add(1, "days")
+      startDate = startDate.add(1, "day")
+      days++
     }
   }
 
@@ -44,7 +46,5 @@ export const updateHotelMetrics = async (): Promise<void> => {
       }
     }
   }
-
-  // console.log(rows.slice(0, 10))
-  await bq.insert(datasetId, 'hotel_metrics', rows)
+  await bq.insert(datasetId, 'hotelMetrics', rows)
 }

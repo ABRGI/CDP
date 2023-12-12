@@ -113,3 +113,26 @@ resource "google_bigquery_table" "hotel_metrics_table" {
       },
   ])
 }
+
+
+resource "google_bigquery_table" "hotel_derived_metrics_table" {
+  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id            = "hotelDerivedMetrics"
+  deletion_protection = false
+  view {
+    query          = <<EOF
+WITH hotels AS (
+  SELECT * FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotels`
+)
+SELECT created, date, hm.label as label, customerType, hotels.rooms as rooms,
+  revenue,
+  (allocation / hotels.rooms) as occupancy,
+  (revenue / hotels.rooms) as adr,
+  ((allocation / hotels.rooms) * (revenue / hotels.rooms)) as revbar
+  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotelMetrics` as hm, hotels WHERE hotels.label = hm.label
+EOF
+    use_legacy_sql = false
+  }
+}

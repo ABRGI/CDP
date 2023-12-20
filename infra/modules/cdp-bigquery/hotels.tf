@@ -125,12 +125,15 @@ resource "google_bigquery_table" "hotel_derived_metrics_table" {
     query          = <<EOF
 WITH hotels AS (
   SELECT * FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotels`
+),
+dailyMetrics AS (
+  SELECT created, date, customerType, label, SUM(allocation) as allocation FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotelMetrics` GROUP BY created, date, customerType, label
 )
 SELECT created, date, hm.label as label, customerType, hotels.rooms as rooms,
   revenue,
   (allocation / hotels.rooms) as occupancy,
-  (revenue / hotels.rooms) as adr,
-  ((allocation / hotels.rooms) * (revenue / hotels.rooms)) as revbar
+  (revenue / (SELECT allocation FROM dailyMetrics WHERE date=hm.date AND customerType=hm.customerType AND label=hm.label AND created=hm.created)) as adr,
+  ((allocation / hotels.rooms) * (revenue / (SELECT allocation FROM dailyMetrics WHERE date=hm.date AND customerType=hm.customerType AND label=hm.label AND created=hm.created))) as revbar
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotelMetrics` as hm, hotels WHERE hotels.label = hm.label
 EOF
     use_legacy_sql = false

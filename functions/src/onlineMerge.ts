@@ -530,12 +530,16 @@ export class OnlineMerger {
     for (const pid of profileIds) {
       if (pid.type === "Guest") {
         const guest = guestMap[pid.id]
-        const reservation = reservationMap[guest.reservationId]
+        const reservation = guest && reservationMap[guest.reservationId]
         if (guest && reservation) {
           if (newCustomer) {
             newCustomer = mergeGuestToCustomer(newCustomer, reservation, guest)
           } else {
             newCustomer = createCustomerFromGuest(reservation, guest)
+          }
+        } else {
+          if (!guest) {
+            console.error(`Customer profile ${customer.id} contains '${pid.type}' with id ${pid.id} which is missing from database`)
           }
         }
       }

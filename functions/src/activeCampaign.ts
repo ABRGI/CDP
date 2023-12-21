@@ -136,18 +136,25 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
   })
 
   console.log(`Found ${removed.length} Active Campaign contacts to removed.`)
+  let removeCount = 0
+  let addCount = 0
+  let updateCount = 0
   for (const remove of removed) {
     if (!dryRun) { await removeActiveCampaignContact(remove) }
+    removeCount++
     if (new Date().getTime() - startTime > 500000) break;
   }
   console.log(`Found ${added.length} customer profiles to add to Active Campaign`)
   for (const add of added) {
     if (!dryRun) { await createActiveCampaignContact(acFields, add) }
+    addCount++
     if (new Date().getTime() - startTime > 500000) break;
   }
   console.log(`Found ${updated.length} customer profile to update to Active Campaign`)
   for (const update of updated) {
     if (!dryRun) { await updateActiveCampaignContact(acFields, acContacts[update.id], update) }
+    updateCount++
     if (new Date().getTime() - startTime > 500000) break;
   }
+  console.log(`Removed ${removeCount}, added ${addCount} and updated ${updateCount} customer profiles.`)
 }

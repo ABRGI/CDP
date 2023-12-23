@@ -1,8 +1,9 @@
 import { BigQuerySimple } from "./bigquery"
 import { activeCampaignApiToken, activeCampaignBaseUrl, datasetId, googleProjectId } from "./env"
 import { ActiveCampaignContact, ActiveCampaignContactCreateResponse, ActiveCampaignCustomFieldsResponse, ActiveCampaignCustomer, ActiveCampaignFieldMap } from "./acTypes"
-import { arrayToMap, sleep } from "./utils"
+import { arrayToMap, sleep, splitIntoChunks } from "./utils"
 import fetch from "node-fetch"
+import { writeFileSync } from 'fs'
 const bq = new BigQuerySimple(googleProjectId)
 
 const acHeaders = {
@@ -36,7 +37,7 @@ const getCustomerActiveCampaignContactValue = (fields: ActiveCampaignFieldMap, c
   }
 }
 
-const getActiveCampaignContactByEmail = async (email: string): Promise<string> => {
+const getActiveCampaignContactByEmail = async (email: string): Promise<string | undefined> => {
   const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts?email=${email}`, {
     method: 'GET',
     headers: acHeaders
@@ -45,6 +46,9 @@ const getActiveCampaignContactByEmail = async (email: string): Promise<string> =
     throw Error(`Getting contact by email failed with status ${response.status}`)
   }
   const responseJson = await response.json()
+  if (!responseJson.contacts.length) {
+    return
+  }
   return responseJson.contacts[0].id
 }
 
@@ -55,7 +59,7 @@ export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap
     headers: acHeaders,
     body: JSON.stringify({ contact })
   })
-  let contactId = ""
+  let contactId: string | undefined = ""
   if (response.status < 300) {
     const responseJson: ActiveCampaignContactCreateResponse = await response.json()
     contactId = responseJson.contact.id
@@ -69,13 +73,41 @@ export const createActiveCampaignContact = async (fields: ActiveCampaignFieldMap
   }
   else if (response.status === 422) {
     contactId = await getActiveCampaignContactByEmail(customer.email!)
-    contact.contactId = contactId
-    await updateActiveCampaignContact(fields, contact, customer)
+    if (contactId) {
+      contact.contactId = contactId
+      try {
+        await updateActiveCampaignContact(fields, contact, customer)
+      }
+      catch {
+        console.log(`Update fail: ${contact.email}`)
+      }
+    } else {
+      console.log(`Missing contact with email ${customer.email}`)
+    }
     return 3
   }
   else {
     throw Error(`Failed to create contact with status: ${response.status}`)
   }
+}
+
+export const overwriteActiveCampaignContact = async (contactId: string, fields: ActiveCampaignFieldMap, customer: ActiveCampaignCustomer): Promise<void> => {
+  const contact = getCustomerActiveCampaignContactValue(fields, customer)
+  contact.contactId = contactId
+  const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts/${contactId}`, {
+    method: 'PUT',
+    headers: acHeaders,
+    body: JSON.stringify({ contact })
+  })
+  if (response.status >= 300) {
+    throw Error(`Failed to overwrite contact ${contact.contactId} with status: ${response.status}`)
+  }
+  await bq.insertOne(datasetId, 'acContacts', {
+    contactId: contact.contactId,
+    customerId: customer.id,
+    value: JSON.stringify(getCustomerActiveCampaignContactValue(fields, customer)),
+    updated: customer.updated
+  })
 }
 
 const updateActiveCampaignContact = async (fields: ActiveCampaignFieldMap, contact: ActiveCampaignContact, customer: ActiveCampaignCustomer): Promise<void> => {
@@ -122,7 +154,7 @@ const fetchSynchronizedActiveCampaignContacts = async (): Promise<{ [customerId:
 }
 
 
-export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolean): Promise<void> => {
+export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolean, existing: { [email: string]: string } = {}): Promise<void> => {
   const acFields = await getActiveCampaignCustomFields()
   const startTime = new Date().getTime()
   const customers = await fetchActiveCampaignCustomerProfiles()
@@ -142,19 +174,64 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
   for (const remove of removed) {
     if (!dryRun) { await removeActiveCampaignContact(remove) }
     removeCount++
-    if (new Date().getTime() - startTime > 500000) break;
+    if (new Date().getTime() - startTime > 450000) break;
   }
   console.log(`Found ${added.length} customer profiles to add to Active Campaign`)
-  for (const add of added) {
-    if (!dryRun) { await createActiveCampaignContact(acFields, add) }
-    addCount++
-    if (new Date().getTime() - startTime > 500000) break;
+  const addStartTime = new Date().getTime()
+
+  const addChunks: any[] = splitIntoChunks(added, 5)
+  for (const addChunk of addChunks) {
+    if (!dryRun) {
+      await Promise.all(addChunk.map((add: any) => {
+        if (existing[add.email]) {
+          return overwriteActiveCampaignContact(existing[add.email], acFields, add)
+        }
+        else {
+          return createActiveCampaignContact(acFields, add)
+        }
+      }))
+    }
+    addCount += addChunk.length
+    if ((addCount % 100) === 0) {
+      console.log(`Adds per second ${(addCount / ((new Date().getTime() - addStartTime) / 1000.0)).toFixed(1)}`)
+    }
+    if (new Date().getTime() - startTime > 450000) break;
   }
   console.log(`Found ${updated.length} customer profile to update to Active Campaign`)
   for (const update of updated) {
     if (!dryRun) { await updateActiveCampaignContact(acFields, acContacts[update.id], update) }
     updateCount++
-    if (new Date().getTime() - startTime > 500000) break;
+    if (new Date().getTime() - startTime > 450000) break;
   }
   console.log(`Removed ${removeCount}, added ${addCount} and updated ${updateCount} customer profiles.`)
+}
+
+
+const fetchContactsPage = async (offset: number, limit: number): Promise<{ contacts: { id: string, email: string }[], meta: { total: number } }> => {
+  const response = await fetch(`${activeCampaignBaseUrl}/api/3/contacts?offset=${offset}&limit=${limit}`, {
+    headers: acHeaders
+  })
+  if (response.status >= 300) {
+    throw Error(`Error in loading ${response.status}: ${response.statusText}`)
+  }
+  return await response.json()
+}
+
+export const getAllContacts = async (): Promise<void> => {
+  let page = await fetchContactsPage(0, 100)
+  let offset = 0
+
+  const allContacts: { id: string, email: string }[] = []
+  while (offset < page.meta.total) {
+    page = await fetchContactsPage(offset, 100)
+    for (const contact of page.contacts) {
+      allContacts.push({ id: contact.id, email: contact.email })
+    }
+    offset += 100
+    if (!(offset % 1000)) {
+      console.log(`${offset}`)
+      writeFileSync("contacts.json", JSON.stringify(allContacts, null, 2))
+    }
+  }
+  writeFileSync("contacts.json", JSON.stringify(allContacts, null, 2))
 }

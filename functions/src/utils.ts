@@ -180,3 +180,12 @@ export const sleep = async (milliSeconds: number): Promise<void> => {
     }, milliSeconds)
   })
 }
+
+export const splitIntoChunks = (array: any[], chunkSize: number): any[][] => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    const chunk = array.slice(i, i + chunkSize);
+    chunks.push(chunk);
+  }
+  return chunks;
+}

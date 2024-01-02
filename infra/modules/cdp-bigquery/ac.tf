@@ -77,7 +77,7 @@ WITH segments AS (
     IF(totalMobileAppBookings > 0, 'Yes', 'No') as channelApp,
     `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_routine(voucherKeys) as voucherCategory,
     updated
-    FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` WHERE (marketingPermission = TRUE OR memberId IS NOT NULL) and isoCountryCode = 'FIN')
+    FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` WHERE (marketingPermission = TRUE OR memberId IS NOT NULL) and email IS NOT NULL and isoCountryCode = 'FIN')
   SELECT id, segments.email as email,
     segments.firstName as firstName,
     lastName,
@@ -164,3 +164,4 @@ resource "google_cloud_scheduler_job" "ac_sync_scheduler" {
     data       = base64encode("notused")
   }
 }
+

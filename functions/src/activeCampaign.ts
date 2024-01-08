@@ -145,12 +145,20 @@ const removeActiveCampaignContact = async (contact: ActiveCampaignContact): Prom
 
 
 const fetchActiveCampaignCustomerProfiles = async (): Promise<{ [id: string]: ActiveCampaignCustomer }> => {
-  const customers = await bq.query<ActiveCampaignCustomer>(datasetId, `SELECT * FROM acSource`)
-  return arrayToMap("id", customers)
+  const customers = await bq.query<ActiveCampaignCustomer>(datasetId, `SELECT * FROM acSource ORDER BY updated DESC`)
+  const filtered: ActiveCampaignCustomer[] = []
+  const emails = new Set<string>()
+  for (const customer of customers) {
+    if (!emails.has(customer.email)) {
+      emails.add(customer.email)
+      filtered.push(customer)
+    }
+  }
+  return arrayToMap("id", filtered)
 }
 
 const fetchSynchronizedActiveCampaignContacts = async (): Promise<{ [customerId: string]: ActiveCampaignContact }> => {
-  return arrayToMap("customerId", await bq.query<ActiveCampaignContact>(datasetId, 'SELECT * FROM acContacts'))
+  return arrayToMap("customerId", await bq.query<ActiveCampaignContact>(datasetId, 'SELECT * FROM acContacts ORDER BY updated DESC'))
 }
 
 

@@ -179,15 +179,19 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
   let removeCount = 0
   let addCount = 0
   let updateCount = 0
-  for (const remove of removed) {
-    if (!dryRun) { await removeActiveCampaignContact(remove) }
-    removeCount++
+  const removeChunks: any[] = splitIntoChunks(removed, 4)
+  for (const removeChunk of removeChunks) {
+    if (!dryRun) {
+      await Promise.all(removeChunk.map((remove: any) => {
+        return removeActiveCampaignContact(remove)
+      }))
+    }
+    removeCount += removeChunk.length
     if (new Date().getTime() - startTime > 450000) break;
   }
-  console.log(`Found ${added.length} customer profiles to add to Active Campaign`)
-  const addStartTime = new Date().getTime()
 
-  const addChunks: any[] = splitIntoChunks(added, 5)
+  console.log(`Found ${added.length} customer profiles to add to Active Campaign`)
+  const addChunks: any[] = splitIntoChunks(added, 4)
   for (const addChunk of addChunks) {
     if (!dryRun) {
       await Promise.all(addChunk.map((add: any) => {
@@ -200,15 +204,15 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
       }))
     }
     addCount += addChunk.length
-    if ((addCount % 100) === 0) {
-      console.log(`Adds per second ${(addCount / ((new Date().getTime() - addStartTime) / 1000.0)).toFixed(1)}`)
-    }
     if (new Date().getTime() - startTime > 450000) break;
   }
   console.log(`Found ${updated.length} customer profile to update to Active Campaign`)
-  for (const update of updated) {
-    if (!dryRun) { await updateActiveCampaignContact(acFields, acContacts[update.id], update) }
-    updateCount++
+  const updateChunks = splitIntoChunks(updated, 4)
+  for (const updateChunk of updateChunks) {
+    if (!dryRun) {
+      await Promise.all(updateChunk.map((update: any) => updateActiveCampaignContact(acFields, acContacts[update.id], update)))
+    }
+    updateCount += updateChunk.length
     if (new Date().getTime() - startTime > 450000) break;
   }
   console.log(`Removed ${removeCount}, added ${addCount} and updated ${updateCount} customer profiles.`)

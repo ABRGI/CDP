@@ -117,16 +117,21 @@ const updateActiveCampaignContact = async (fields: ActiveCampaignFieldMap, conta
     headers: acHeaders,
     body: JSON.stringify({ contact: contactValue })
   })
-  if (response.status >= 300) {
-    throw Error(`Failed to update contact ${contact.contactId} with status: ${response.status}`)
+  if (response.status === 422) {
+    await bq.delete(datasetId, `DELETE FROM acContacts WHERE contactId='${contact.contactId}'`)
   }
-  await bq.delete(datasetId, `DELETE FROM acContacts WHERE contactId='${contact.contactId}'`)
-  await bq.insertOne(datasetId, 'acContacts', {
-    contactId: contact.contactId,
-    customerId: customer.id,
-    value: JSON.stringify(getCustomerActiveCampaignContactValue(fields, customer)),
-    updated: customer.updated
-  })
+  else if (response.status >= 300) {
+    throw Error(`Failed to update contact ${contact.contactId} with status: ${response.status}`)
+  } else {
+    await bq.delete(datasetId, `DELETE FROM acContacts WHERE contactId='${contact.contactId}'`)
+    await bq.insertOne(datasetId, 'acContacts', {
+      contactId: contact.contactId,
+      customerId: customer.id,
+      value: JSON.stringify(getCustomerActiveCampaignContactValue(fields, customer)),
+      updated: customer.updated
+    })
+  }
+
 }
 
 const removeActiveCampaignContact = async (contact: ActiveCampaignContact): Promise<void> => {
@@ -207,7 +212,7 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
     if (new Date().getTime() - startTime > 300000) break;
   }
   console.log(`Found ${updated.length} customer profile to update to Active Campaign`)
-  const updateChunks = splitIntoChunks(updated, 4)
+  const updateChunks = splitIntoChunks(updated, 1)
   for (const updateChunk of updateChunks) {
     if (!dryRun) {
       await Promise.all(updateChunk.map((update: any) => updateActiveCampaignContact(acFields, acContacts[update.id], update)))

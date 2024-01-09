@@ -179,7 +179,7 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
   let removeCount = 0
   let addCount = 0
   let updateCount = 0
-  const removeChunks: any[] = splitIntoChunks(removed, 4)
+  const removeChunks: any[] = splitIntoChunks(removed, 1)
   for (const removeChunk of removeChunks) {
     if (!dryRun) {
       await Promise.all(removeChunk.map((remove: any) => {

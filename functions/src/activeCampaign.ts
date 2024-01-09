@@ -187,7 +187,7 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
       }))
     }
     removeCount += removeChunk.length
-    if (new Date().getTime() - startTime > 450000) break;
+    if (new Date().getTime() - startTime > 150000) break;
   }
 
   console.log(`Found ${added.length} customer profiles to add to Active Campaign`)
@@ -204,7 +204,7 @@ export const syncUpdatedCustomerProfilesToActiveCampaign = async (dryRun: boolea
       }))
     }
     addCount += addChunk.length
-    if (new Date().getTime() - startTime > 450000) break;
+    if (new Date().getTime() - startTime > 300000) break;
   }
   console.log(`Found ${updated.length} customer profile to update to Active Campaign`)
   const updateChunks = splitIntoChunks(updated, 4)

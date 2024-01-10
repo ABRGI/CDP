@@ -157,7 +157,7 @@ resource "google_cloud_scheduler_job" "ac_sync_scheduler" {
   region      = "europe-west1"
   name        = "ac-sync-scheduler-job"
   description = "Run Active Campaign synchronization"
-  schedule    = "0 0,4,8,12,16,20 * * *"
+  schedule    = "0 */2 * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_ac_sync_pubsub.id

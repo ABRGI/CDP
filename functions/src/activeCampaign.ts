@@ -163,7 +163,7 @@ const fetchActiveCampaignCustomerProfiles = async (): Promise<{ [id: string]: Ac
 }
 
 const fetchSynchronizedActiveCampaignContacts = async (): Promise<{ [customerId: string]: ActiveCampaignContact }> => {
-  return arrayToMap("customerId", await bq.query<ActiveCampaignContact>(datasetId, 'SELECT * FROM acContacts ORDER BY updated DESC'))
+  return arrayToMap("customerId", await bq.query<ActiveCampaignContact>(datasetId, 'SELECT * FROM acContacts ORDER BY updated DESC, customerId DESC'))
 }
 
 

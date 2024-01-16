@@ -2,8 +2,7 @@ name: build-and-deploy-staging
 run-name: ${{ github.actor }} is build and deploying new version to staging
 on:
   push:
-    branches:
-      staging
+    branches: staging
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -16,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16.13.0'
+          node-version: "20.11.0"
 
       - name: Install dependencies
         run: npm install
@@ -27,80 +26,80 @@ jobs:
         working-directory: ${{env.source-directory}}
 
       - name: Authenticate Cloud SDK
-        uses: 'google-github-actions/auth@v1'
+        uses: "google-github-actions/auth@v1"
         with:
           credentials_json: ${{secrets.STAGING_GCP_DEPLOYMENT_KEY}}
 
       - name: Deploy New Reservation Hook
-        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        uses: "google-github-actions/deploy-cloud-functions@v1"
         with:
-          name: 'NewReservationHook'
-          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
-          runtime: 'nodejs16'
+          name: "NewReservationHook"
+          project_id: "${{vars.STAGING_GCP_PROJECT_ID}}"
+          runtime: "nodejs20"
           source_dir: ${{env.source-directory}}
-          region: 'europe-west1'
-          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}'
+          region: "europe-west1"
+          env_vars: "GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}"
 
       - name: Deploy Fetch Reservations
-        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        uses: "google-github-actions/deploy-cloud-functions@v1"
         with:
-          name: 'FetchReservations'
-          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
-          runtime: 'nodejs16'
+          name: "FetchReservations"
+          project_id: "${{vars.STAGING_GCP_PROJECT_ID}}"
+          runtime: "nodejs20"
           source_dir: ${{env.source-directory}}
-          region: 'europe-west1'
-          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
-          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-fetch-pubsub'
-          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}'
+          region: "europe-west1"
+          event_trigger_type: "providers/cloud.pubsub/eventTypes/topic.publish"
+          event_trigger_resource: "projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-fetch-pubsub"
+          env_vars: "GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}"
 
       - name: Deploy Merge New Reservations
-        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        uses: "google-github-actions/deploy-cloud-functions@v1"
         with:
-          name: 'MergeNewReservations'
-          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
-          runtime: 'nodejs16'
+          name: "MergeNewReservations"
+          project_id: "${{vars.STAGING_GCP_PROJECT_ID}}"
+          runtime: "nodejs20"
           source_dir: ${{env.source-directory}}
-          region: 'europe-west1'
-          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
-          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-merge-pubsub'
-          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}'
+          region: "europe-west1"
+          event_trigger_type: "providers/cloud.pubsub/eventTypes/topic.publish"
+          event_trigger_resource: "projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-merge-pubsub"
+          env_vars: "GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}"
 
       - name: Deploy Remove Duplicates
-        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        uses: "google-github-actions/deploy-cloud-functions@v1"
         with:
-          name: 'RemoveDuplicates'
-          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
-          runtime: 'nodejs16'
+          name: "RemoveDuplicates"
+          project_id: "${{vars.STAGING_GCP_PROJECT_ID}}"
+          runtime: "nodejs20"
           source_dir: ${{env.source-directory}}
-          region: 'europe-west1'
-          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
-          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-duplicate-removal-pubsub'
+          region: "europe-west1"
+          event_trigger_type: "providers/cloud.pubsub/eventTypes/topic.publish"
+          event_trigger_resource: "projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-duplicate-removal-pubsub"
           timeout: 540
           memory_mb: 2048
-          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}'
+          env_vars: "GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}"
 
       - name: Deploy Active Campaign synchronization
-        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        uses: "google-github-actions/deploy-cloud-functions@v1"
         with:
-          name: 'SyncContactsToAc'
-          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
-          runtime: 'nodejs18'
+          name: "SyncContactsToAc"
+          project_id: "${{vars.STAGING_GCP_PROJECT_ID}}"
+          runtime: "nodejs20"
           source_dir: ${{env.source-directory}}
-          region: 'europe-west1'
-          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
-          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-ac-sync-pubsub'
+          region: "europe-west1"
+          event_trigger_type: "providers/cloud.pubsub/eventTypes/topic.publish"
+          event_trigger_resource: "projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-ac-sync-pubsub"
           timeout: 540
-          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}'
+          env_vars: "GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}"
 
       - name: Deploy hotel metrics creation
-        uses: 'google-github-actions/deploy-cloud-functions@v1'
+        uses: "google-github-actions/deploy-cloud-functions@v1"
         with:
-          name: 'UpdateHotelMetrics'
-          project_id: '${{vars.STAGING_GCP_PROJECT_ID}}'
-          runtime: 'nodejs18'
+          name: "UpdateHotelMetrics"
+          project_id: "${{vars.STAGING_GCP_PROJECT_ID}}"
+          runtime: "nodejs20"
           source_dir: ${{env.source-directory}}
-          region: 'europe-west1'
-          event_trigger_type: 'providers/cloud.pubsub/eventTypes/topic.publish'
-          event_trigger_resource: 'projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-hotel-metrics-pubsub'
+          region: "europe-west1"
+          event_trigger_type: "providers/cloud.pubsub/eventTypes/topic.publish"
+          event_trigger_resource: "projects/${{vars.STAGING_GCP_PROJECT_ID}}/topics/trigger-hotel-metrics-pubsub"
           timeout: 540
-          env_vars: 'GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}'
+          env_vars: "GCP_PROJECT_ID=${{vars.STAGING_GCP_PROJECT_ID}},GCP_DATASET_ID=${{vars.GCP_DATASET_ID}},NELSON_API_ROOT=${{vars.STAGING_NELSON_API_ROOT}},NELSON_API_KEY=${{secrets.NELSON_API_KEY}},ACTIVE_CAMPAIGN_BASE_URL=${{vars.STAGING_ACTIVE_CAMPAIGN_BASE_URL}},ACTIVE_CAMPAIGN_API_TOKEN=${{secrets.STAGING_ACTIVE_CAMPAIGN_API_TOKEN}}"

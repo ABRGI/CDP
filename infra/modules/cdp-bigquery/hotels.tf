@@ -114,7 +114,6 @@ resource "google_bigquery_table" "hotel_metrics_table" {
   ])
 }
 
-
 resource "google_bigquery_table" "hotel_derived_metrics_table" {
   depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
   project             = var.project_id

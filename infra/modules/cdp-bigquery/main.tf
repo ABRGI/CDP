@@ -901,8 +901,26 @@ resource "google_bigquery_routine" "map_voucher_category_routine" {
   return_type = jsonencode({ typeKind : "STRING" })
 }
 
+resource "google_bigquery_table" "customer_hotels_table" {
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id            = "customerHotels"
+  deletion_protection = false
+  view {
+    query          = <<EOF
+SELECT id, ARRAY_AGG(hotel) as hotels FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` as customers
+  CROSS JOIN UNNEST(customers.totalHotelBookingCounts) GROUP BY id
+EOF
+    use_legacy_sql = false
+  }
+}
+
 resource "google_bigquery_table" "levels_table" {
-  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
+  depends_on = [
+    google_bigquery_routine.map_voucher_category_reservations_routine,
+    google_bigquery_routine.map_voucher_category_routine,
+    google_bigquery_table.customer_hotels_table
+  ]
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
   table_id            = "levels"
@@ -1022,14 +1040,13 @@ SELECT id, segments.email as email,
   i.hotelServices as hotelServiceInterests,
   i.places as placeInterests,
   i.values as valueInterests,
-  latestHotel
+  latestHotel,
+  (SELECT hotels FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customerHotels` WHERE id=segments.id) as hotels
   FROM segments LEFT OUTER JOIN `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customerInterests` as i ON segments.email = i.email
 EOF
     use_legacy_sql = false
   }
 }
-
-
 
 resource "google_bigquery_routine" "map_voucher_category_reservations_routine" {
   project            = var.project_id

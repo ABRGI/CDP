@@ -933,6 +933,7 @@ WITH segments AS (
   created,
   latestCreated,
   level,
+  latestHotel,
   DATE_DIFF(CURRENT_DATE(), latestCheckInDate, DAY) as daysSinceCheckIn,
   DATE_DIFF(CURRENT_DATE(), EXTRACT(DATE FROM latestCreated), MONTH) as monthsSinceReservation,
   ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
@@ -1020,7 +1021,8 @@ SELECT id, segments.email as email,
   i.happenings as happeningInterests,
   i.hotelServices as hotelServiceInterests,
   i.places as placeInterests,
-  i.values as valueInterests
+  i.values as valueInterests,
+  latestHotel
   FROM segments LEFT OUTER JOIN `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customerInterests` as i ON segments.email = i.email
 EOF
     use_legacy_sql = false

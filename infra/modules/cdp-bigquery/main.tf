@@ -1088,7 +1088,8 @@ WITH segments AS (
   state,
   voucherKeys,
   DATE_DIFF(EXTRACT(DATE FROM checkOut), EXTRACT(DATE FROM checkIn), DAY) as nights,
-  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_reservations_routine(voucherKeys) as voucherCategory
+  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_reservations_routine(voucherKeys) as voucherCategory,
+  created
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.reservations`)
 SELECT
   checkInWeekday,
@@ -1114,7 +1115,8 @@ SELECT
     WHEN nights <= 10 THEN '6-10'
     ELSE '10+'
     END
-    as nightsClass
+    as nightsClass,
+  created
   FROM segments
 EOF
     use_legacy_sql = false

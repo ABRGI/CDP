@@ -901,8 +901,26 @@ resource "google_bigquery_routine" "map_voucher_category_routine" {
   return_type = jsonencode({ typeKind : "STRING" })
 }
 
+resource "google_bigquery_table" "customer_hotels_table" {
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
+  table_id            = "customerHotels"
+  deletion_protection = false
+  view {
+    query          = <<EOF
+SELECT id, ARRAY_AGG(hotel) as hotels FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customers` as customers
+  CROSS JOIN UNNEST(customers.totalHotelBookingCounts) GROUP BY id
+EOF
+    use_legacy_sql = false
+  }
+}
+
 resource "google_bigquery_table" "levels_table" {
-  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
+  depends_on = [
+    google_bigquery_routine.map_voucher_category_reservations_routine,
+    google_bigquery_routine.map_voucher_category_routine,
+    google_bigquery_table.customer_hotels_table
+  ]
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
   table_id            = "levels"
@@ -933,6 +951,7 @@ WITH segments AS (
   created,
   latestCreated,
   level,
+  latestHotel,
   DATE_DIFF(CURRENT_DATE(), latestCheckInDate, DAY) as daysSinceCheckIn,
   DATE_DIFF(CURRENT_DATE(), EXTRACT(DATE FROM latestCreated), MONTH) as monthsSinceReservation,
   ROUND(IF(totalBookings = 0, 0 ,totalBookingCancellations / totalBookings) * 10) * 10 as cancellationPercentage
@@ -1020,14 +1039,14 @@ SELECT id, segments.email as email,
   i.happenings as happeningInterests,
   i.hotelServices as hotelServiceInterests,
   i.places as placeInterests,
-  i.values as valueInterests
+  i.values as valueInterests,
+  latestHotel,
+  (SELECT hotels FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customerHotels` WHERE id=segments.id) as hotels
   FROM segments LEFT OUTER JOIN `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.customerInterests` as i ON segments.email = i.email
 EOF
     use_legacy_sql = false
   }
 }
-
-
 
 resource "google_bigquery_routine" "map_voucher_category_reservations_routine" {
   project            = var.project_id
@@ -1069,7 +1088,8 @@ WITH segments AS (
   state,
   voucherKeys,
   DATE_DIFF(EXTRACT(DATE FROM checkOut), EXTRACT(DATE FROM checkIn), DAY) as nights,
-  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_reservations_routine(voucherKeys) as voucherCategory
+  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}`.map_voucher_category_reservations_routine(voucherKeys) as voucherCategory,
+  created
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.reservations`)
 SELECT
   checkInWeekday,
@@ -1095,7 +1115,8 @@ SELECT
     WHEN nights <= 10 THEN '6-10'
     ELSE '10+'
     END
-    as nightsClass
+    as nightsClass,
+  created
   FROM segments
 EOF
     use_legacy_sql = false

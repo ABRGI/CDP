@@ -6,10 +6,10 @@ type HotelMetric = { [customerType: string]: { revenue: number, allocation: numb
 
 type HotelMetrics = { [date: string]: { [label: string]: HotelMetric } }
 
-export const updateHotelMetrics = async (): Promise<void> => {
+export const updateHotelMetrics = async (date?: string): Promise<void> => {
   const bq = new BigQuerySimple(googleProjectId)
 
-  const created = dayjs().format("YYYY-MM-DD")
+  const created = date || dayjs().format("YYYY-MM-DD")
   const allocations = await bq.query<any>(datasetId, `SELECT * FROM allocations WHERE created <= '${created}'`)
 
   const metrics: HotelMetrics = {}

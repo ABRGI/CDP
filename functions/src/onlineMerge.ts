@@ -61,8 +61,9 @@ export class OnlineMerger {
     `)
     console.log(`Checking latest merging updated: ${latest.updated}`)
     const latestUpdate = latest.updated ? dayjs(latest.updated).format(timestampFormat) : dayjs().year(1970).format(timestampFormat)
+    const newestUpdate = dayjs().subtract(2, "hours").format(timestampFormat)
 
-    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') ORDER BY updated ASC LIMIT 80`)
+    const newReservations = await this.bigQuery.query<Reservation>(this.datasetId, `SELECT * FROM reservations WHERE updated>TIMESTAMP('${latestUpdate}') AND updated<TIMESTAMP('${newestUpdate}') ORDER BY updated ASC LIMIT 80`)
     if (!newReservations.length) {
       return status
     }

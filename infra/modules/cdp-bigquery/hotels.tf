@@ -114,14 +114,21 @@ resource "google_bigquery_table" "hotel_metrics_table" {
   ])
 }
 
-resource "google_bigquery_table" "hotel_derived_metrics_table" {
-  depends_on          = [google_bigquery_routine.map_voucher_category_reservations_routine, google_bigquery_routine.map_voucher_category_routine]
-  project             = var.project_id
-  dataset_id          = google_bigquery_dataset.cdp_dataset.dataset_id
-  table_id            = "hotelDerivedMetrics"
-  deletion_protection = false
-  view {
-    query          = <<EOF
+resource "google_bigquery_data_transfer_config" "hotel_derived_metrics_scheduled" {
+  project        = var.project_id
+  display_name   = "hotel-derived-metrics"
+  location       = "EU"
+  data_source_id = "scheduled_query"
+  schedule       = "every 2 hours"
+
+  service_account_name = module.data_transfer_sa.email
+
+  destination_dataset_id = google_bigquery_dataset.cdp_dataset.dataset_id
+
+  params = {
+    destination_table_name_template = "hotelDerivedMetrics"
+    write_disposition               = "WRITE_TRUNCATE"
+    query                           = <<EOF
 WITH hotels AS (
   SELECT * FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotels`
 ),
@@ -135,9 +142,9 @@ SELECT created, date, hm.label as label, customerType, hotels.rooms as rooms,
   ((allocation / hotels.rooms) * (revenue / (SELECT allocation FROM dailyMetrics WHERE date=hm.date AND customerType=hm.customerType AND label=hm.label AND created=hm.created))) as revbar
   FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotelMetrics` as hm, hotels WHERE hotels.label = hm.label
 EOF
-    use_legacy_sql = false
   }
 }
+
 
 resource "google_pubsub_topic" "function_trigger_hotel_metrics_pubsub" {
   name    = "trigger-hotel-metrics-pubsub"
@@ -162,3 +169,40 @@ resource "google_cloud_scheduler_job" "hotel_metrics_create_scheduler" {
     data       = base64encode("notused")
   }
 }
+
+
+resource "google_bigquery_data_transfer_config" "hotel_history_metrics_scheduled" {
+  project        = var.project_id
+  display_name   = "hotel-history-metrics"
+  location       = "EU"
+  data_source_id = "scheduled_query"
+  schedule       = "every 12 hours"
+
+  service_account_name = module.data_transfer_sa.email
+
+  destination_dataset_id = google_bigquery_dataset.cdp_dataset.dataset_id
+
+  params = {
+    destination_table_name_template = "hotelDerivedMetricsYearComparison"
+    write_disposition               = "WRITE_TRUNCATE"
+    query                           = <<EOF
+SELECT curr.created as created, curr.date as date,
+  prev.created as createdYearAgo,
+  prev.date as dateYearAgo,
+  curr.label as label,
+  curr.customerType as customerType,
+  curr.occupancy,
+  prev.occupancy as occupancyYearAgo,
+  curr.revbar,
+  prev.revbar as revbarYearAgo,
+  curr.adr,
+  prev.adr as adrYearAgo
+  FROM `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotelDerivedMetrics` as curr,
+  `${var.project_id}.${google_bigquery_dataset.cdp_dataset.dataset_id}.hotelDerivedMetrics` as prev
+  WHERE curr.created = DATE_ADD(prev.created, INTERVAL 1 YEAR) AND
+  curr.date = DATE_ADD(prev.date, INTERVAL 1 YEAR) AND
+  curr.label = prev.label AND curr.customerType = prev.customerType
+EOF
+  }
+}
+

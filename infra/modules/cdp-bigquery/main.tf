@@ -5,6 +5,16 @@ resource "google_bigquery_dataset" "cdp_dataset" {
   location    = "EU"
 }
 
+module "data_transfer_sa" {
+  source             = "../data-transfer-sa"
+  target_project_id  = var.project_id
+  source_project_id  = var.project_id
+  source_dataset_ids = [google_bigquery_dataset.cdp_dataset.dataset_id]
+  target_dataset_id  = google_bigquery_dataset.cdp_dataset.dataset_id
+  service_account_id = "cdp-data-transfer"
+}
+
+
 resource "google_bigquery_table" "reservations_table" {
   project    = var.project_id
   dataset_id = google_bigquery_dataset.cdp_dataset.dataset_id

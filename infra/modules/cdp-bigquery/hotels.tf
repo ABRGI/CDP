@@ -119,7 +119,7 @@ resource "google_bigquery_data_transfer_config" "hotel_derived_metrics_scheduled
   display_name   = "hotel-derived-metrics"
   location       = "EU"
   data_source_id = "scheduled_query"
-  schedule       = "every 2 hours"
+  schedule       = "every 12 hours"
 
   service_account_name = module.data_transfer_sa.email
 
@@ -162,7 +162,7 @@ resource "google_cloud_scheduler_job" "hotel_metrics_create_scheduler" {
   region      = "europe-west1"
   name        = "trigger-hotel-metrics-pubsub"
   description = "Run hotel metrics creation"
-  schedule    = "0 9 * * *"
+  schedule    = "0 7 * * *"
 
   pubsub_target {
     topic_name = google_pubsub_topic.function_trigger_hotel_metrics_pubsub.id
